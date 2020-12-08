@@ -1,0 +1,294 @@
+<template>
+	<view class="login">
+		<a-head :showBack="false" bgColor='#4abdb4'></a-head>
+		<!-- <image src="../../static/loginbg.png" mode="aspectFit" class="loginbg"></image> -->
+		<view class="content">
+			<view class="title">
+				验收评价
+			</view>
+			<view class="name">
+				<image src="../../static/user.png" mode=""></image>
+				<u-input v-model="username" type="text" :border="false" placeholder="请输入登录账号" height="70" />
+			</view>
+			<view class="phone">
+				<image src="../../static/phone.png" mode=""></image>
+				<u-input v-model="phone" type="text" :border="false" placeholder="请输入手机号码" height="70" />
+			</view>
+			<view class="codepart">
+				<view class="left">
+					<u-input v-model="code" type="number" :border="false" placeholder="请输入验证码" height="70" />
+				</view>
+				<view class="right">
+					<view class="getcode" v-if="timeFlag" @click="getCode()">
+						{{codetext}}
+					</view>
+					
+					<view class="count" v-else>
+						<u-count-down ref="uCountDown" @change="timeChange" :timestamp="timestamp" :show-days="false" :show-hours="false"
+						 :show-minutes="false" color="#00b2a4"></u-count-down>秒后获取
+					</view>
+				</view>
+			</view>
+			<view class="action-part">
+				<view class="loginin" @click="login()">
+					登录
+				</view>
+			</view>
+
+		</view>
+		<view class="bottom">
+			<image src="../../static/copyright.png" mode="" class="copyright"></image>
+			<text>成都积盛电子科技有限公司版权所有</text>
+		</view>
+	</view>
+</template>
+<script>
+	import helper from '@/common/helper.js'
+	export default {
+		data() {
+			return {
+				username: '', //名称
+				phone: '', //电话号码
+				code: '', //验证码
+				codetext: '获取验证码', //验证码文字
+				timeFlag: true, //倒计时状态
+				timestamp: 59, //倒计时秒数
+				IMEI: '', //手机标识
+				hasLogin: false
+			}
+		},
+		created() {
+				helper.request(helper.websiteUrl + 'v1/sendMessage',{uid:"321312321"}, 'POST', true, res => {
+				})
+		},
+		onLoad() {
+			// #ifdef APP-PLUS	
+			if (plus.device.imei != null && plus.device.imei != '') {
+				this.IMEI = plus.device.imei;
+			}
+			// #endif
+		},
+		methods: {
+			//验证码获取
+			getCode() {
+				if (!this.phone) {
+					helper.showToast('请输入手机号码');
+					return;
+				}
+				helper.request(helper.websiteUrl + "v1/getSmsCaptcha", {
+					'passwd': this.phone
+				}, 'GET', false, (data) => {
+					uni.showToast({
+						title: data,
+						icon: "none"
+					});
+					this.timeFlag = false;
+				})
+			},
+			//倒计时
+			timeChange(timestamp) {
+				if (timestamp == 0) {
+					this.timeFlag = true;
+				}
+			},
+			//登录
+			login() {
+				if (!this.username) {
+					helper.showToast('请输入登录账号');
+					return;
+				}
+				if (!this.phone) {
+					helper.showToast('请输入手机号码');
+					return;
+				}
+				if (!this.code) {
+					helper.showToast('请输入验证码');
+					return;
+				}
+				let param = {
+					'username': this.username,
+					'passwd': this.phone,
+					'code': this.code,
+					'IMEI': this.IMEI
+				};
+				helper.request(helper.websiteUrl + 'v1/login', param, 'POST', true, (user) => {
+
+					//同步缓存用户名，密码，头像图片,菜单
+					let Time = new Date().getTime();
+					uni.setStorageSync('TimeObj', JSON.stringify(Time)); //获取登录时间
+					uni.setStorageSync('USERNAME', user.USERNAME);
+					uni.setStorageSync('NAME', user.NAME);
+					uni.setStorageSync('PASSWORD', user.PASSWORD);
+					uni.setStorageSync('HEAD_IMG', user.HEAD_IMG);
+					uni.setStorageSync('hasLogin', true);
+					uni.setStorageSync('menuList', JSON.stringify(user.menuList));
+					uni.setStorageSync('USER_ID', user.USER_ID);
+					uni.setStorageSync('PHONE', user.PHONE);
+					uni.setStorageSync('ROLE_ID', user.ROLE_ID);
+					uni.setStorageSync('functionid', user.functionid);
+					uni.setStorageSync("flag", false);
+					uni.setStorageSync("ggflag", false);
+					//异步缓存 手机号码，项目ids，角色id，用户是否禁用状态，用户id
+					uni.setStorage({
+						key: 'PHONE',
+						data: user.PHONE
+					});
+
+					uni.setStorage({
+						key: 'ROLE_ID',
+						data: user.ROLE_ID
+					});
+
+					uni.setStorage({
+						key: 'STATUS',
+						data: user.STATUS
+					});
+
+					uni.setStorage({
+						key: 'USER_ID',
+						data: user.USER_ID
+					});
+
+					//关闭当前页面并跳转到首页
+
+					uni.redirectTo({
+						url: '/pages/index/index'
+					})
+
+				});
+			}
+
+		}
+	}
+</script>
+<style lang="less" scoped>
+	.login {
+		width: 100%;
+		min-height: 100vh;
+		background: #4abdb4;
+		// background: linear-gradient(to bottom, #00b2a4, #4abdb4);
+		position: relative;
+
+		.loginbg {
+			position: fixed;
+			z-index: 1;
+			height: 90%;
+			width: 90%;
+			margin: 0 5%;
+			-webkit-filter: grayscale(50%);
+			filter: grayscale(10%);
+
+		}
+
+		.content {
+			z-index: 99;
+			width: 75%;
+			margin: 0 auto;
+			position: relative;
+
+			.title {
+				width: 100%;
+				height: 100rpx;
+				line-height: 100rpx;
+				color: #FFFFFF;
+				font-size: 44rpx;
+				text-align: center;
+				font-weight: bold;
+				letter-spacing: 10rpx;
+				margin: 60rpx 0 100rpx;
+
+			}
+
+			.name,
+			.phone {
+				padding: 20rpx 30rpx;
+				height: 60rpx;
+				line-height: 60rpx;
+				display: flex;
+				align-items: center;
+				background: #FFFFFF;
+				border-radius: 20rpx;
+				margin-bottom: 60rpx;
+
+				image {
+					width: 60rpx;
+					height: 60rpx;
+					margin-right: 20rpx;
+				}
+			}
+
+			.codepart {
+				display: flex;
+				height: 100rpx;
+				line-height: 100rpx;
+				margin-bottom: 60rpx;
+
+				.left {
+					width: 55%;
+					margin-right: 5%;
+					background: #FFFFFF;
+					border-radius: 20rpx;
+					height: 60rpx;
+					line-height: 60rpx;
+					padding: 20rpx 30rpx;
+					display: flex;
+					align-items: center;
+				}
+
+				.right {
+					background: #FFFFFF;
+					width: 40%;
+					text-align: center;
+					border-radius: 20rpx;
+					font-size: 30rpx;
+
+					.getcode {
+						color: #00b2a4;
+						border-radius: 20rpx;
+					}
+
+					.count {
+						color: #999999;
+						border-radius: 20rpx;
+					}
+				}
+			}
+
+			.action-part {
+				.loginin {
+					width: 100%;
+					color: #FFFFFF;
+					line-height: 100rpx;
+					height: 100rpx;
+					font-size: 36rpx;
+					border: 2rpx solid #FFFFFF;
+					box-shadow: 0px 10rpx 10rpx rgba(0, 0, 0, 0.3);
+					text-align: center;
+					border-radius: 20rpx;
+				}
+			}
+
+		}
+
+		.bottom {
+			position: fixed;
+			bottom: 20rpx;
+			color: #FFFFFF;
+			width: 100%;
+			text-align: center;
+			z-index: 99;
+
+			text {
+				font-size: 30rpx;
+				height: 60rpx;
+				line-height: 60rpx;
+			}
+
+			.copyright {
+				width: 26rpx;
+				height: 26rpx;
+				margin-right: 4rpx;
+			}
+		}
+	}
+</style>

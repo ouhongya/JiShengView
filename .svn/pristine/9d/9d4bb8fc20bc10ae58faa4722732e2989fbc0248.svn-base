@@ -1,0 +1,225 @@
+<template>
+	<view class="index">
+		<a-head bgColor='#4abdb4' text="验收评价" :showList='true' :showBack="false"></a-head>
+		<u-sticky offset-top="0">
+			<view class="lead" :id="leadId">
+				<view class="lead-part">
+					<u-grid :col="leadcount">
+						<u-grid-item v-for="(menu,index) in menuList" :bg-color="index=== current1?'#ccebe9':''" @click="change(menu.menu_URL,index)">
+							<u-badge :count="menu.msg" :offset="[20, 20]" v-if='menu.msg'></u-badge>
+							<image :src="addBaseUrl(menu.menu_ICON)" mode=""></image>
+							<view class="grid-text">{{menu.menu_NAME}}</view>
+						</u-grid-item>
+					</u-grid>
+				</view>
+				<view class="oval"></view>
+			</view>
+		</u-sticky>
+		<view class="content" v-if="current=='/pages/index/index'">
+			<!-- 这里是图表统计 -->
+			<statistics :offset='leadheight'></statistics>
+
+		</view>
+		<view class="content" v-if="current=='/pages/question/question'">
+			<!-- 这里是问题列表 -->
+			<question :offset='leadheight'></question>
+
+		</view>
+		<view class="content" v-if="current=='/pages/standard/standard'">
+			<!-- 这里是标准模板 -->
+			<standard :offset='leadheight'></standard>
+
+		</view>
+		<view class="content" v-if="current=='/pages/schedule/schedule'">
+			<!-- 这里是待办事项 -->
+			<schedule :offset='leadheight'></schedule>
+
+		</view>
+		<view class="content" v-if="current=='/pages/application/application'">
+			<!-- 这里是应用中心 -->
+			<application :offset='leadheight'></application>
+
+		</view>
+		<view class="content" v-if="current=='/pages/setting/setting'">
+			<!-- 这里是系统配置-->
+			<setting :offset='leadheight'></setting>
+		</view>
+		<view class="content" v-if="current=='/pages/checktask/checktask'">
+			<!-- 这里是检查任务-->
+			<checktask :offset='leadheight'></checktask>
+		</view>
+	</view>
+
+</template>
+
+
+<script>
+	import helper from '@/common/helper.js'
+	import statistics from '@/components/statistics/statistics.vue';
+	import application from '@/components/application/application.vue';
+	import question from '@/components/question/question.vue';
+	import schedule from '@/components/schedule/schedule.vue';
+	import standard from '@/components/standard/standard.vue';
+	import setting from '@/components/setting/setting.vue';
+	import checktask from '@/components/checktask/checktask.vue'
+	export default {
+		components: {
+			'statistics': statistics, //统计
+			'application': application, //应用中心
+			'question': question, //问题列表
+			'schedule': schedule, //待办事项
+			'standard': standard, //标准模板
+			'setting': setting, //系统配置
+			'checktask': checktask, //检查任务
+		},
+		data() {
+			return {
+				leadId: this.$u.guid(),
+				leadheight: 100,
+				current: '/pages/index/index', //当前选中模块
+				current1:0,
+				leadcount: '1',
+				menuList: [],
+			}
+		},
+		onLoad() {
+			//初始导航菜单赋值
+			this.init();
+		},
+		mounted() {
+			this.getleadHeight();
+			
+		},
+		methods: {
+			init() {
+				if (uni.getStorageSync('menuList')) {
+	
+					this.menuList = JSON.parse(uni.getStorageSync('menuList'))
+					this.current=this.menuList[0].menu_URL;
+					if (this.menuList.length > 3) {
+						this.leadcount = Math.ceil(this.menuList.length / 2)
+					} else {
+						this.leadcount = this.menuList.length
+					}
+				} else {
+					this.menuList = [{
+							menu_ICON: 'https://ss0.bdstatic.com/94oJfD_bAAcT8t7mm9GUKT-xh_/timg?image&quality=100&size=b4000_4000&sec=1604481929&di=3c88d206ab8605425ac840b1e962ad55&src=http://a3.att.hudong.com/64/52/01300000407527124482522224765.jpg',
+							menu_NAME: '第一个',
+							msg: '0'
+						},
+						{
+							menu_ICON: 'https://ss0.bdstatic.com/94oJfD_bAAcT8t7mm9GUKT-xh_/timg?image&quality=100&size=b4000_4000&sec=1604481929&di=3c88d206ab8605425ac840b1e962ad55&src=http://a3.att.hudong.com/64/52/01300000407527124482522224765.jpg',
+							menu_NAME: '第2个',
+							msg: '1'
+						},
+						{
+							menu_ICON: 'https://ss0.bdstatic.com/94oJfD_bAAcT8t7mm9GUKT-xh_/timg?image&quality=100&size=b4000_4000&sec=1604481929&di=3c88d206ab8605425ac840b1e962ad55&src=http://a3.att.hudong.com/64/52/01300000407527124482522224765.jpg',
+							menu_NAME: '第3个',
+							msg: '2'
+						},
+						{
+							menu_ICON: 'https://ss0.bdstatic.com/94oJfD_bAAcT8t7mm9GUKT-xh_/timg?image&quality=100&size=b4000_4000&sec=1604481929&di=3c88d206ab8605425ac840b1e962ad55&src=http://a3.att.hudong.com/64/52/01300000407527124482522224765.jpg',
+							menu_NAME: '第4个',
+							msg: '0'
+						},
+						{
+							menu_ICON: 'https://ss0.bdstatic.com/94oJfD_bAAcT8t7mm9GUKT-xh_/timg?image&quality=100&size=b4000_4000&sec=1604481929&di=3c88d206ab8605425ac840b1e962ad55&src=http://a3.att.hudong.com/64/52/01300000407527124482522224765.jpg',
+							menu_NAME: '第5个',
+							msg: '0'
+						},
+						{
+							menu_ICON: 'https://ss0.bdstatic.com/94oJfD_bAAcT8t7mm9GUKT-xh_/timg?image&quality=100&size=b4000_4000&sec=1604481929&di=3c88d206ab8605425ac840b1e962ad55&src=http://a3.att.hudong.com/64/52/01300000407527124482522224765.jpg',
+							menu_NAME: '第6个',
+							msg: '0'
+						},
+						{
+							menu_ICON: 'https://ss0.bdstatic.com/94oJfD_bAAcT8t7mm9GUKT-xh_/timg?image&quality=100&size=b4000_4000&sec=1604481929&di=3c88d206ab8605425ac840b1e962ad55&src=http://a3.att.hudong.com/64/52/01300000407527124482522224765.jpg',
+							menu_NAME: '第7个',
+							msg: '0'
+						},
+					]
+					if (this.menuList.length > 3) {
+						this.leadcount = Math.ceil(this.menuList.length / 2)
+					} else {
+						this.leadcount = this.menuList.length
+					}
+				}
+
+
+
+			},
+			//获取collapse内容高度
+			getleadHeight() {
+				const {
+					windowWidth,
+					windowHeight
+				} = uni.getSystemInfoSync();
+				// let unit=windowWidth/windowHeight;//长宽比
+				this.$nextTick(() => {
+					this.$uGetRect('#' + this.leadId).then(res => {
+						this.leadheight = 750 * res.height / windowWidth;
+					})
+				});
+			},
+			//当前选中模块
+			change(url,index) {
+				this.current1=index;
+				this.current=url;
+
+			},
+			//图片路径函数
+			addBaseUrl(PHOTO_PATH) {
+
+				return helper.addBaseUrl(PHOTO_PATH);
+			},
+
+
+		}
+	}
+</script>
+
+<style lang="less" scoped>
+	.lead {
+		width: 100%;
+		background: #4abdb4;
+		padding: 30rpx 0;
+
+		.lead-part {
+			width: 80%;
+			margin: 0 auto;
+			background: #FFFFFF;
+			position: relative;
+			border-radius: 20rpx;
+			padding: 10rpx;
+
+		}
+
+		.badge-icon {
+			position: absolute;
+			top: 14rpx;
+			right: 40rpx;
+		}
+
+		image {
+			width: 60rpx;
+			height: 60rpx;
+		}
+
+		.grid-text {
+			font-size: 30rpx;
+			margin-top: 10rpx;
+			color: #333333;
+		}
+
+	}
+
+	.oval {
+		background: #c8ebe8;
+		border-radius: 96%;
+		width: 90%;
+		margin: 0 auto;
+		height: 80rpx;
+		margin-top: -44rpx;
+
+	}
+</style>

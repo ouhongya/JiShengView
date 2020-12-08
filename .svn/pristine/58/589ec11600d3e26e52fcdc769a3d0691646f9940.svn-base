@@ -1,0 +1,594 @@
+<template>
+	<view class="statistics">
+		<u-sticky :offset-top="offset">
+			<view class="condition">
+			<!-- 	<view class="search-part">
+					<select v-model="fromlist.list1" :label-in-value="true" class="selectType">
+						<option v-for="(item,index) in list1" :key="index" :value="item.value">{{item.label}}</option>
+					</select>
+				</view>
+				<view class="search-part">
+					<select v-model="fromlist.list2" :label-in-value="true" class="selectType">
+						<option v-for="(item,index) in list2" :key="index" :value="item.value">{{item.label}}</option>
+					</select>
+				</view>
+				<view class="search-part">
+					<select v-model="fromlist.list3" :label-in-value="true" class="selectType">
+						<option v-for="(item,index) in list3" :key="index" :value="item.value">{{item.label}}</option>
+					</select>
+				</view> -->
+			</view>
+		</u-sticky>
+		<view class="table-part">
+			<view class="part">
+				<view class="table-title">
+					<view class="line"></view>
+					<view class="txt">
+						总体完成情况
+					</view>
+				</view>
+				<view class="table-content">
+					<canvas canvas-id="table1" id="table1" class="charts1"></canvas>
+				</view>
+			</view>
+
+			<view class="part">
+				<view class="table-title">
+					<view class="line"></view>
+					<view class="txt">
+						总体完成明细表
+					</view>
+				</view>
+				<view class="table-content">
+					<u-table>
+						<u-tr>
+							<u-th>检查单位</u-th>
+							<u-th>检查组长</u-th>
+							<u-th>进度</u-th>
+							<u-th>状态</u-th>
+							<u-th>问题数量</u-th>
+						</u-tr>
+						<u-tr v-for="i in 5">
+							<u-td>xxxx公司</u-td>
+							<u-td>名字</u-td>
+							<u-td>34/567</u-td>
+							<u-td>进行中</u-td>
+							<u-td>67</u-td>
+						</u-tr>
+					</u-table>
+				</view>
+			</view>
+
+			<view class="part">
+				<view class="table-title">
+					<view class="line"></view>
+					<view class="txt">
+						检查单位问题统计图
+					</view>
+				</view>
+				<view class="table-content">
+					<canvas canvas-id="table2" id="table2" class="charts"></canvas>
+				</view>
+			</view>
+
+			<view class="part">
+				<view class="table-title">
+					<view class="line"></view>
+					<view class="txt">
+						检查单位问题数量占比图
+					</view>
+				</view>
+				<view class="table-content">
+					<canvas canvas-id="table3" id="table3" class="charts"></canvas>
+				</view>
+			</view>
+
+			<view class="part">
+				<view class="table-title">
+					<view class="line"></view>
+					<view class="txt">
+						检查模块问题统计图
+					</view>
+				</view>
+				<view class="table-content">
+					<canvas canvas-id="table4" id="table4" class="charts"></canvas>
+				</view>
+			</view>
+
+			<view class="part">
+				<view class="table-title">
+					<view class="line"></view>
+					<view class="txt">
+						相同问题数量统计图
+					</view>
+				</view>
+				<view class="table-content">
+					<canvas canvas-id="table5" id="table5" class="charts" @touchstart="touchTable5"></canvas>
+				</view>
+			</view>
+
+			<view class="part">
+				<view class="table-title">
+					<view class="line"></view>
+					<view class="txt">
+						工作量统计表
+					</view>
+				</view>
+				<view class="table-content">
+					<u-table>
+						<u-tr>
+							<u-th>姓名</u-th>
+							<u-th>检查量</u-th>
+							<u-th>发现问题量</u-th>
+							<u-th>整改问题量</u-th>
+							<u-th>整改通过率</u-th>
+						</u-tr>
+						<u-tr v-for="i in 5">
+							<u-td>名字</u-td>
+							<u-td>562</u-td>
+							<u-td>34</u-td>
+							<u-td>34</u-td>
+							<u-td>100%</u-td>
+						</u-tr>
+					</u-table>
+				</view>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import uCharts from '@/components/u-charts/u-charts.js';
+	var _self;
+	var table1 = null;
+	export default {
+		props: {
+			offset: {
+				type: Number,
+				default: 0
+			},
+		},
+		data() {
+			return {
+				//搜索部分
+				list1: [{
+						value: '1',
+						label: '全部单位'
+					},
+					{
+						value: '2',
+						label: 'xxx单位'
+					},
+					{
+						value: '3',
+						label: 'xxx单位'
+					}
+				],
+				list2: [{
+						value: '1',
+						label: '全部人员'
+					},
+					{
+						value: '2',
+						label: 'xxx人员'
+					},
+					{
+						value: '3',
+						label: 'xxx人员'
+					}
+				],
+				list3: [{
+						value: '1',
+						label: '全部准则'
+					},
+					{
+						value: '2',
+						label: 'xxx准则'
+					},
+					{
+						value: '3',
+						label: 'xxx准则'
+					}
+				],
+				fromlist: {
+					list1: '全部单位',
+					list2: '全部人员',
+					list3: '全部准则',
+				},
+				pixelRatio: 1,
+				//圆弧进度图
+				cWidth1: '',
+				cHeight1: '',
+				arcbarWidth: '15',
+				arcbar: [{
+					name: '总体完成情况',
+					data: 0.29,
+					color: '#2fc25b'
+				}],
+
+				//柱状图(单位问题)
+				cWidth2: '',
+				cHeight2: '',
+				Unit: {
+					"categories": ["xxx公司", "xxx公司", "xxx公司", "xxx公司", "xxx公司", "xxx公司"],
+					"series": [{
+
+						"name": "检查单位问题统计图",
+						"data": [{
+							"value": 40,
+							"grade": 120
+						}, {
+							"value": 44,
+							"grade": 120
+						}, {
+							"value": 56,
+							"grade": 120
+						}, {
+							"value": 67,
+							"grade": 120
+						}, {
+							"value": 40,
+							"grade": 120
+						}, {
+							"value": 40,
+							"grade": 120
+						}, ]
+					}]
+				},
+				//饼图(单位问题)
+				cWidth3: '',
+				cHeight3: '',
+				Pie: {
+					"series": [{
+						"name": "xxx公司",
+						"data": 50
+					}, {
+						"name": "xxx公司",
+						"data": 30
+					}, {
+						"name": "xxx公司",
+						"data": 20
+					}, {
+						"name": "xxx公司",
+						"data": 18
+					}, {
+						"name": "xxx公司",
+						"data": 8
+					}]
+				},
+				//柱状图(检查模块问题)
+				cWidth4: '',
+				cHeight4: '',
+				Check: {
+					"categories": ["xxx公司", "xxx公司", "xxx公司", "xxx公司", "xxx公司", "xxx公司"],
+					"series": [{
+
+						"name": "检查单位问题统计图",
+						"data": [{
+							"value": 40,
+							"grade": 120
+						}, {
+							"value": 44,
+							"grade": 120
+						}, {
+							"value": 56,
+							"grade": 120
+						}, {
+							"value": 67,
+							"grade": 120
+						}, {
+							"value": 40,
+							"grade": 120
+						}, {
+							"value": 40,
+							"grade": 120
+						}, ]
+					}]
+				},
+				//柱状图(相同问题)
+				cWidth5: '',
+				cHeight5: '',
+				Similar: {
+					"categories": ["xxx公司", "xxx公司", "xxx公司", "xxx公司", "xxx公司", "xxx公司"],
+					"series": [{
+
+						"name": "检查单位问题统计图",
+						"data": [{
+							"value": 40,
+							"grade": 120
+						}, {
+							"value": 44,
+							"grade": 120
+						}, {
+							"value": 56,
+							"grade": 120
+						}, {
+							"value": 67,
+							"grade": 120
+						}, {
+							"value": 40,
+							"grade": 120
+						}, {
+							"value": 40,
+							"grade": 120
+						}, ]
+					}]
+				},
+			};
+		},
+		created() {
+
+			this.fromlist.list1 = this.list1[0].value;
+			this.fromlist.list2 = this.list2[0].value;
+			this.fromlist.list3 = this.list3[0].value;
+		},
+		mounted() {
+			_self = this;
+			//圆弧进度图
+			this.cWidth1 = uni.upx2px(750);
+			this.cHeight1 = uni.upx2px(400);
+			console.log(1111)
+			this.getRingData();
+			//柱状图(单位问题)
+			this.cWidth2 = uni.upx2px(750);
+			this.cHeight2 = uni.upx2px(500);
+			this.getUnitData();
+			//饼图(单位问题)
+			this.cWidth3 = uni.upx2px(750);
+			this.cHeight3 = uni.upx2px(500);
+			this.getPieData();
+			//柱状图(检查模块问题)
+			this.cWidth4 = uni.upx2px(750);
+			this.cHeight4 = uni.upx2px(500);
+			this.getCheckData();
+			//柱状图(相同问题)
+			this.cWidth5 = uni.upx2px(750);
+			this.cHeight5 = uni.upx2px(500);
+			this.getSimilarData();
+		},
+		methods: {
+			//圆弧进度图
+			getRingData() {
+				this.table1 = new uCharts({
+					$this: this,
+					canvasId: 'table1', //这里是ID
+					type: 'arcbar',
+					fontSize: 11,
+					legend: {
+						show: false
+					},
+					background: '#FFFFFF',
+					pixelRatio: 1,
+					series: this.arcbar, //这里是数据
+					animation: true,
+					width: this.cWidth1,
+					height: this.cHeight1,
+					dataLabel: true,
+					title: {
+						name: Math.round(this.arcbar[0].data * 100) + '%',
+						color: this.arcbar[0].color,
+						fontSize: 25
+					},
+					extra: {
+						arcbar: {
+							type: 'circle', //整圆类型进度条图
+							width: _self.arcbarWidth * _self.pixelRatio, //圆弧的宽度
+							startAngle: 0.5 //整圆类型只需配置起始角度即可
+						}
+					}
+				});
+			},
+
+			//柱状图(单位问题)
+
+			getUnitData() {
+				new uCharts({
+					$this: this,
+					canvasId: 'table2',
+					type: 'column',
+					legend: {
+						show: true
+					},
+					fontSize: 11,
+					background: '#FFFFFF',
+					pixelRatio: 1,
+					animation: true,
+					categories: this.Unit.categories,
+					series: this.Unit.series,
+					xAxis: {
+						disableGrid: true,
+					},
+					yAxis: {
+						//disabled:true
+					},
+					dataLabel: true,
+					width: this.cWidth2,
+					height: this.cHeight2,
+					extra: {
+						column: {
+							type: 'group',
+							width: 20
+						}
+					}
+				});
+			},
+			// touchTable2(e){
+			// 			table2.showToolTip(e, {
+			// 				format: function (item, category) {
+			// 					if(typeof item.data === 'object'){
+			// 						return category + ' ' + item.name + ':' + item.data.value 
+			// 					}else{
+			// 						return category + ' ' + item.name + ':' + item.data 
+			// 					}
+			// 				}
+			// 			});
+			// 		},
+			//饼图(单位问题)
+
+			getPieData() {
+				// this.Pie,Check,Similar,
+				new uCharts({
+					$this: _self,
+					canvasId: 'table3',
+					type: 'pie',
+					fontSize: 11,
+					legend: {
+						show: true
+					},
+					background: '#FFFFFF',
+					pixelRatio: _self.pixelRatio,
+					series: this.Pie.series,
+					animation: true,
+					width: _self.cWidth3,
+					height: _self.cHeight3,
+					dataLabel: true,
+					extra: {
+						pie: {
+							lableWidth: 15
+						}
+					},
+				});
+			},
+			//柱状图(检查模块问题)
+			getCheckData() {
+				new uCharts({
+					$this: this,
+					canvasId: 'table4',
+					type: 'column',
+					legend: {
+						show: true
+					},
+					fontSize: 11,
+					background: '#FFFFFF',
+					pixelRatio: 1,
+					animation: true,
+					categories: this.Check.categories,
+					series: this.Check.series,
+					xAxis: {
+						disableGrid: true,
+					},
+					yAxis: {
+						//disabled:true
+					},
+					dataLabel: true,
+					width: this.cWidth4,
+					height: this.cHeight4,
+					extra: {
+						column: {
+							type: 'group',
+							width: 20
+						}
+					}
+				});
+			},
+
+			//柱状图(相同问题)
+			getSimilarData() {
+				new uCharts({
+					$this: this,
+					canvasId: 'table5',
+					type: 'column',
+					legend: {
+						show: true
+					},
+					fontSize: 11,
+					background: '#FFFFFF',
+					pixelRatio: 1,
+					animation: true,
+					categories: this.Similar.categories,
+					series: this.Similar.series,
+					xAxis: {
+						disableGrid: true,
+					},
+					yAxis: {
+						//disabled:true
+					},
+					dataLabel: true,
+					width: this.cWidth5,
+					height: this.cHeight5,
+					extra: {
+						column: {
+							type: 'group',
+							width: 20
+						}
+					}
+				});
+			}
+		}
+	}
+</script>
+
+
+<style lang="less" scoped>
+	.charts {
+		width: 100%;
+		height: 500upx;
+		background-color: #FFFFFF;
+	}
+
+	.charts1 {
+		width: 100%;
+		height: 400upx;
+		background-color: #FFFFFF;
+	}
+
+
+	.statistics {
+		position: relative;
+
+
+		.condition {
+			height: 100rpx;
+			line-height: 100rpx;
+			background: #f6fff9;
+			width: 100%;
+			display: flex;
+			justify-content: space-between;
+			border-bottom: 2rpx solid #f6f6f6;
+
+
+			.search-part {
+				width: 30%;
+				margin: 0 2%;
+
+				.selectType {
+					border: 2rpx solid #f6f6f6;
+					height: 70rpx;
+					line-height: 70rpx;
+					color: #303133;
+					width: 100%;
+					font-size: 30rpx;
+				}
+			}
+
+
+		}
+
+		.table-part {
+			padding: 30rpx;
+		}
+
+		.table-title {
+			margin: 20rpx 0;
+			display: flex;
+			align-items: center;
+
+			.line {
+				width: 12rpx;
+				height: 36rpx;
+				line-height: 36rpx;
+				border-radius: 10rpx;
+				background: #4abdb4;
+				margin-right: 10rpx;
+			}
+
+			.txt {
+				font-size: 30rpx;
+				color: #666666;
+				height: 50rpx;
+				line-height: 50rpx;
+			}
+		}
+
+	}
+</style>

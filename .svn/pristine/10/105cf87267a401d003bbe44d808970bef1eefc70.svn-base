@@ -1,0 +1,1081 @@
+<template>
+	<view class="head_box">
+		<view class='head' :style="'background:'+bgColor">
+			<view class='head_title' :style="'margin-top:'+PhoneHeight+'px;'">
+				<view v-if="showBack" class="head_back" @click="back">
+					<u-icon name="arrow-left" :color="backColor" size="32"></u-icon>
+				</view>
+				<view class="drawer" @click="drawer()" v-if="showList">
+					<u-icon name="list" color="#ffffff" size="50"></u-icon>
+					<u-badge type="error" :count="msgdata" class="badge-msg"></u-badge>
+				</view>
+				<view class="title" :style="'color:'+textColor">{{text}}</view>
+			</view>
+		</view>
+		<view v-if="station" :style="'min-height:'+(PhoneHeight+44)+'px;height:'+headHeight">
+			<image v-if="bgImage" :style="bgStyle" :src="bgImage" mode="aspectFill"></image>
+		</view>
+		<!-- 左侧内容 -->
+		<u-popup v-model="showDrawer" mode="left" width="600">
+			<view>
+				<view class="person">
+					<view class="headpart">
+						<view class="headperson">
+							<view class="imgPart">
+								<image src="../../static/headpic.png" mode=""></image>
+							</view>
+							<view class="info">
+								<view class="">
+									{{username}}
+								</view>
+								<view class="">
+									{{phone}}
+								</view>
+							</view>
+						</view>
+						<view class="company">
+							成都积盛电子科技有限公司
+						</view>
+					</view>
+
+
+					<view class="list-part">
+						<view class="list">
+							<image src="../../static/checkin1.png" mode=""></image>
+							<l-file ref="lFile" @up-success="onSuccess"></l-file>
+							<view @click="onUpload()">
+								导入准则
+							</view>
+						</view>
+
+						<view class="list" @click="checkOut()">
+							<image src="../../static/checkout1.png" mode=""></image>
+							<view>导出全部</view>
+						</view>
+						<view class="list" @click="toLogin()">
+							<image src="../../static/change1.png" mode=""></image>
+							<view>切换账号</view>
+						</view>
+						<view class="list">
+							<image src="../../static/load1.png" mode=""></image>
+							<view @click="upload()">模板下载</view>
+						</view>
+					</view>
+					<view class="list-part">
+						<view class="list" @click="toPublic">
+							<image src="../../static/public1.png" mode=""></image>
+							<view>公告</view>
+							<u-badge type="error" :count="msgdata" class="badge-msg"></u-badge>
+						</view>
+						<view class="list" @click="explain()">
+							<image src="../../static/asking2.png" mode=""></image>
+							<view>目录说明</view>
+						</view>
+						<view class="list" @click="toRecycle()">
+							<image src="../../static/del1.png" mode=""></image>
+							<view>回收站</view>
+						</view>
+					</view>
+				</view>
+				<view class="bottom">
+					<view class="txt">
+						V2.0.0
+					</view>
+				</view>
+			</view>
+		</u-popup>
+
+		<u-modal v-model="showExplain" :title-style="{color: '#fff',background:'#4abdb4'}" @confirm="confirmExplain()"
+		 :confirm-style="{color:'#4abdb4'}" confirm-text="我知道了" :show-title="false">
+			<view class="slot-content">
+				<view class="contentModel">
+					<u-form :model="form" ref="uForm" label-position="top">
+						<u-form-item label="导出文件存放地址" :label-style="labelStyle">
+							<view class="explain">
+								E:\project\static\xxxxxxxxx
+							</view>
+						</u-form-item>
+						<u-form-item label="下载模板存放地址" :label-style="labelStyle">
+							<view class="explain">
+								E:\project\static\xxxxxxxxx
+							</view>
+						</u-form-item>
+					</u-form>
+				</view>
+			</view>
+		</u-modal>
+		<!-- 导出弹出框 -->
+		<!-- 导出选择 -->
+		<u-popup v-model="chooseModal" :mode="curMode" width="40%" height="80%">
+			<view class="roleModel">
+				<view class="roleTop">
+					导出全部
+				</view>
+				<view class="contentModel">
+					<u-form :model="form" ref="uForm">
+
+						<u-form-item label="选择单位" :label-style="labelStyle" :label-width='labelWidth' v-if="functionid == 1">
+							<!-- <u-input v-model="checkcompany" type="select" :border="true" @click="openlistout1()" height="70" /> -->
+							<u-input v-model="checkcompany" type="text" :border="true" height="70" :disabled="true" />
+						</u-form-item>
+
+						<u-form-item label="选择人员" :label-style="labelStyle" :label-width='labelWidth' v-if="functionid == 1">
+							<!-- <u-input v-model="checkperson" type="select" :border="true" @click="openlistout2()" height="70" /> -->
+							<u-input v-model="checkperson" type="text" :border="true" height="70" :disabled="true" />
+						</u-form-item>
+						<u-form-item label="选择标准" :label-style="labelStyle" :label-width='labelWidth' v-if="functionid == 1">
+							<u-input v-model="checkstandrd" type="select" :border="true" @click="openlistout3()" height="70" />
+						</u-form-item>
+						<u-form-item label="时间范围" :label-style="labelStyle" :label-width='labelWidth'>
+							<u-input v-model="checktime" type="select" :border="true" @click="openlistout4()" height="70" placeholder="点击选择时间范围"/>
+							<u-calendar v-model="showchecktime" mode="range" @change="dateoutconfirm" max-date="2030-01-01"></u-calendar>
+						</u-form-item>
+						<u-form-item label="导出图片" :label-style="labelStyle" :label-width='labelWidth'>
+							<u-radio-group v-model="checkpic">
+								<u-radio v-for="(item, index) in checkpicList" :key="index" :name="item.name">
+									{{ item.name }}
+								</u-radio>
+							</u-radio-group>
+						</u-form-item>
+						<u-form-item label="数据类型" :label-style="labelStyle" :label-width='labelWidth'>
+							<u-radio-group v-model="checktype">
+								<u-radio v-for="(item, index) in checktypeList" :key="index" :name="item.name">
+									{{ item.name }}
+								</u-radio>
+							</u-radio-group>
+						</u-form-item>
+						<!-- <u-form-item label="*是否导出已归档数据" :label-style="labelStyle">
+						<u-radio-group v-model="checkdata">
+							<u-radio v-for="(item, index) in checkdataList" :key="index" :name="item.name">
+								{{ item.name }}
+							</u-radio>
+						</u-radio-group>
+					</u-form-item> -->
+					</u-form>
+				</view>
+
+				<view class="roleAction">
+					<view class="cancel" @click="cancelCheck()">
+						取消
+					</view>
+					<view class="sure" @click="confirmCheck()">
+						导出
+					</view>
+				</view>
+			</view>
+		</u-popup>
+		<!-- 导出进度 -->
+		<u-modal v-model="prograssModel" :title-style="{color: '#fff',background:'#4abdb4'}" confirm-text="开始导出" cancel-text="取消导出"
+		 @confirm="confirmPrograss()" :show-cancel-button="true" :confirm-style="{color:'#4abdb4'}">
+			<view class="slot-content">
+				<view class="contentModel">
+					<u-line-progress :striped="true" :percent="percent" :striped-active="true"></u-line-progress>
+				</view>
+			</view>
+		</u-modal>
+		<!-- 	<u-modal v-model="outModel" :title-style="{color: '#fff',background:'#4abdb4'}" :show-cancel-button="false"
+		 confirm-text="我知道了" @confirm="confirmOut()" :confirm-style="{color:'#4abdb4'}">
+			<view class="slot-content">
+				<view class="contentModel">
+					<view class="succcess">
+						<u-icon name="checkbox-mark" color="#4abdb4" size="30"></u-icon>数据已成功导出
+					</view>
+				</view>
+			</view>
+		</u-modal> -->
+		<!-- 选择单位 -->
+		<u-popup v-model="showlistout1" :mode="curMode" width="40%" height="80%" @close="closeout1">
+			<view class="Model">
+				<view class="toptitle">
+					单位筛选
+				</view>
+				<view class="top-part">
+					<view class="all">
+						<u-checkbox-group @change="checkedAll">
+							<u-checkbox v-model="listout1choose" active-color="#4abdb4">全部单位</u-checkbox>
+						</u-checkbox-group>
+					</view>
+					<view class="part">
+						<scroll-view scroll-y style="height:60vh;width: 100%;">
+							<u-checkbox-group @change="checkboxGroupChange" :wrap="true">
+								<u-checkbox @change="checkboxChange" v-model="item.checked" v-for="(item, index) in listout1" :key="index"
+								 :name="item.name" active-color="#4abdb4">{{item.name}}</u-checkbox>
+							</u-checkbox-group>
+						</scroll-view>
+					</view>
+				</view>
+			</view>
+		</u-popup>
+		<!-- 选择人员 -->
+		<u-popup v-model="showlistout2" :mode="curMode" width="40%" height="80%" @close="closeout2">
+			<view class="Model">
+				<view class="toptitle">
+					人员筛选
+				</view>
+				<view class="top-part">
+					<view class="all">
+						<u-checkbox-group @change="checkedAll2">
+							<u-checkbox v-model="listout2choose" active-color="#4abdb4">全部人员</u-checkbox>
+						</u-checkbox-group>
+					</view>
+					<view class="part">
+						<scroll-view scroll-y style="height:60vh;width: 100%;">
+							<u-checkbox-group @change="checkboxGroupChange2" :wrap="true">
+								<u-checkbox @change="checkboxChange2" v-model="item.checked" v-for="(item, index) in listout2" :key="index"
+								 :name="item.name" active-color="#4abdb4">{{item.name}}</u-checkbox>
+							</u-checkbox-group>
+						</scroll-view>
+					</view>
+				</view>
+			</view>
+		</u-popup>
+		<!--选择标准弹框 -->
+		<u-popup v-model="showlistout3" :mode="curMode" width="40%" height="80%" @close="closeout3">
+			<view class="Model">
+				<view class="toptitle">
+					标准筛选
+				</view>
+				<view class="top-part">
+					<view class="all">
+						<u-checkbox-group @change="checkedAll3">
+							<u-checkbox v-model="listout3choose" active-color="#4abdb4">全部标准</u-checkbox>
+						</u-checkbox-group>
+					</view>
+					<view class="part">
+						<scroll-view scroll-y style="height:60vh;width: 100%;">
+							<u-checkbox-group @change="checkboxGroupChange3" :wrap="true">
+								<u-checkbox @change="checkboxChange3" v-model="item.checked" v-for="(item, index) in listout3" :key="index"
+								 :name="item.name" active-color="#4abdb4">{{item.name}}</u-checkbox>
+							</u-checkbox-group>
+						</scroll-view>
+					</view>
+				</view>
+			</view>
+		</u-popup>
+
+	</view>
+</template>
+
+<script>
+	/**
+	 * head 头部
+	 * @description 本组件一般用于页面头部
+	 * @property {Boolean} show-back 是否显示左边的返回图标(默认为true)
+	 * @property {Boolean} station 是否占用高度(默认为true)
+	 * @property {Boolean} height 高度(默认为true)
+	 * @property {String} back-url 左边的返回图标跳转页面（默认返回上一页）
+	 * @property {String} back-color 左边的返回图标颜色(默认颜色#ffffff)
+	 * @property {String} text 标题名称(默认为空)
+	 * @property {String} text-color 标题字体颜色（默认#ffffff,不需要背景颜色为none）
+	 * @property {String} bg-color 背景颜色（默认#ffffff,不需要背景颜色为none）
+	 * @property {String} bg-image 背景图片链接（有背景图片就会占用高度）
+	 * @property {String} bg-style 背景图片样式(父页面自定义)
+	 * @property {String} show-lead 是否展示头部导航
+	 * @property {String} question 是否展示小圆点
+	 * @property {String} action 是否展示小圆点
+	 * @property {Boolean} active1 是否当前选中(默认为false)
+	 * @example <a-head :show-back="false" :text="个人中心"></a-head>
+	 */
+	import app from '@/App.vue'
+	import helper from '@/common/helper.js'
+	export default {
+		props: {
+			showBack: {
+				type: Boolean,
+				default () {
+					return true;
+				}
+			},
+			showList: {
+				type: Boolean,
+				default () {
+					return false;
+				}
+			},
+
+			height: {
+				type: String,
+				default () {
+					return '';
+				}
+			},
+			backUrl: {
+				type: String,
+				default () {
+					return '';
+				}
+			},
+			parameter: {
+				type: String,
+				default () {
+					return '';
+				}
+			},
+			backColor: {
+				type: String,
+				default () {
+					return '#ffffff';
+				}
+			},
+			station: {
+				type: Boolean,
+				default () {
+					return true;
+				}
+			},
+			text: {
+				type: String,
+				default () {
+					return '';
+				}
+			},
+			bgColor: {
+				type: String,
+				default () {
+					return '#00b2a4';
+				}
+			},
+			textColor: {
+				type: String,
+				default () {
+					return '#ffffff';
+				}
+			},
+			bgImage: {
+				type: String,
+				default () {
+					return '';
+				}
+			},
+			bgStyle: {
+				type: String,
+				default () {
+					return '';
+				}
+			},
+			msgdata: {
+				type: String,
+				default () {
+					return '0';
+				}
+			},
+			curMode: {
+				type: String,
+				default () {
+					return 'bottom';
+				}
+			},
+			username: {
+				type: String,
+				default () {
+					return '暂无名称';
+				}
+			},
+			phone: {
+				type: String,
+				default () {
+					return '暂无手机号';
+				}
+			},
+			// reFresh: {
+			// 	type: Boolean,
+			// 	default () {
+			// 		return true;
+			// 	}
+			// },
+		},
+		data() {
+			return {
+				headHeight: '',
+				PhoneHeight: 0,
+				windowHeight: 0,
+				//是否显示左侧抽屉
+				showDrawer: false,
+				// name: uni.getStorageSync("NAME"),
+				// phone: uni.getStorageSync("PHONE"),
+				// msg: uni.getStorageSync("msg"), //公告数量(大于0时显示)
+				chooseModal: false, // 导出弹框
+				prograssModel: false,
+				outModel: false,
+				form: {},
+				labelStyle: {
+					color: '#333',
+					fontSize: '32rpx'
+				},
+				labelWidth: '200',
+				checkpic: '是',
+				checktype: '全部数据',
+				checkdata: '否',
+				checkcompany: '全部单位',
+				checkperson: '全部人员',
+				checkstandrd: '全部标准',
+				checktime: '',
+				functionid: uni.getStorageSync("functionid"),
+				showchecktime: false,
+				showlistout1: false,
+				showlistout2: false,
+				showlistout3: false,
+				listout1choose: true,
+				listout2choose: true,
+				listout3choose: true,
+				checkpicList: [{
+						name: '是',
+					},
+					{
+						name: '否',
+					}
+				],
+				checktypeList: [{
+						name: '全部数据'
+					},
+					{
+						name: '问题数据'
+					},
+				],
+				checkdataList: [{
+						name: '是'
+					},
+					{
+						name: '否'
+					}
+				],
+				listout1: [{
+						checked: false,
+						name: 'xxx单位1'
+					},
+					{
+						checked: false,
+						name: 'xxx单位2'
+					},
+					{
+						checked: false,
+						name: 'xxx单位3'
+					}
+
+
+				],
+
+				listout2: [{
+						checked: false,
+						name: 'xxxx人员1'
+					},
+					{
+						checked: false,
+						name: 'xxx人员2'
+					},
+					{
+						checked: false,
+						name: 'xxx人员3'
+					},
+
+				],
+
+				listout3: [{
+						checked: false,
+						name: 'xxx标准1'
+					},
+					{
+						checked: false,
+						name: 'xxx标准2'
+					},
+					{
+						checked: false,
+						name: 'xxx标准3'
+					}
+				],
+				percent: 0, //导出进度百分比
+				showExplain: false,
+				scorllheight:0
+			}
+		},
+		created() {
+			let that = this
+			this.PhoneHeight = app.methods.getPhoneHeight()
+			this.headHeight = this.height ? this.height : (this.PhoneHeight + 44) + 'px'
+			this.scorllheight=this.height ? this.height : (this.PhoneHeight + 44)
+			console.log(this.headHeight, "this.headHeight")
+			console.log(this.scorllheight, "scorllheight")
+			uni.$emit('headHeight', {
+				data: this.scorllheight
+			});
+			uni.getSystemInfo({
+				success(res) {
+					that.windowHeight = res.windowHeight
+				}
+			})
+			helper.request(helper.websiteUrl + "v1/getnormal", {
+				uid: ""
+			}, 'GET', false, (data) => {
+				this.listout3 = data
+			})
+
+
+		},
+		// watch: {
+		// 	reFresh(val) {
+		// 		this.$nextTick(() => {
+		// 			this.reFresh = true;
+		// 		})
+		// 	}
+		// },
+		methods: {
+
+			//选择单位
+			checkboxChange(e) {},
+			// 选中任一checkbox时，由checkbox-group触发
+			checkboxGroupChange(e) {
+				this.checkcompany = '';
+				e.map(val => {
+					this.checkcompany += val + ',';
+				})
+				this.checkcompany=this.checkcompany.slice(0,this.checkcompany.length-1)
+				if (e.length == this.listout1.length) {
+					this.listout1choose = true;
+					this.checkcompany = '全部单位';
+				} else {
+					this.listout1choose = false;
+				}
+			},
+			// 全选
+			checkedAll() {
+				if (this.listout1choose == true) {
+					this.listout1.map(val => {
+						val.checked = true;
+						this.checkcompany = '全部单位';
+					})
+				} else {
+					this.listout1.map(val => {
+						val.checked = false;
+					})
+				}
+
+			},
+
+			openlistout1() {
+				this.showlistout1 = true;
+				this.getlistout1();
+			},
+			getlistout1() {
+				if (this.checkcompany == '全部单位') {
+					this.checkcompany = '全部单位';
+					this.listout1.map(val => {
+						val.checked = true;
+					})
+					this.listout1choose = true;
+				} else {
+					let s = this.checkcompany.split(",");
+					s.map(item => {
+						this.listout1.map(val => {
+							if (val.name == item) {
+								val.checked = true;
+							}
+						})
+					})
+					this.listout1choose = false;
+				}
+			},
+
+			closeout1() {
+
+			},
+			//选择人员
+			checkboxChange2(e) {},
+			checkboxGroupChange2(e) {
+				this.checkperson = '';
+				e.map(val => {
+					this.checkperson += val + ',';
+				})
+				this.checkperson=this.checkperson.slice(0,this.checkperson.length-1)
+				if (e.length == this.listout2.length) {
+					this.list2choose = true;
+					this.checkperson = '全部人员';
+				} else {
+					this.list2choose = false;
+				}
+			},
+			// 全选
+			checkedAll2() {
+				if (this.list2choose == true) {
+					this.listout2.map(val => {
+						val.checked = true;
+						this.checkperson = '全部人员';
+					})
+				} else {
+					this.listout2.map(val => {
+						val.checked = false;
+					})
+				}
+
+			},
+			openlistout2() {
+				this.showlistout2 = true;
+				this.getlistout2();
+			},
+			getlistout2() {
+
+				if (this.checkperson == '全部人员') {
+					this.checkperson = '全部人员';
+					this.listout2.map(val => {
+						val.checked = true;
+					})
+					this.list2choose = true;
+				} else {
+					let s = this.checkperson.split(",");
+					s.map(item => {
+						this.listout2.map(val => {
+							if (val.name == item) {
+								val.checked = true;
+							}
+						})
+					})
+					this.list2choose = false;
+				}
+			},
+
+			closeout2() {
+
+			},
+			//选择标准
+			checkboxChange3(e) {},
+			// 选中任一checkbox时，由checkbox-group触发
+			checkboxGroupChange3(e) {
+				this.checkstandrd = '';
+				e.map(val => {
+					this.checkstandrd += val + ',';
+				})
+				this.checkstandrd=this.checkstandrd.slice(0,this.checkstandrd.length-1)
+				if (e.length == this.listout3.length) {
+					this.listout3choose = true;
+					this.checkstandrd = '全部标准';
+				} else {
+					this.listout3choose = false;
+				}
+			},
+			// 全选
+			checkedAll3() {
+				if (this.listout3choose == true) {
+					this.listout3.map(val => {
+						val.checked = true;
+						this.checkstandrd = '全部标准';
+					})
+				} else {
+					this.listout3.map(val => {
+						val.checked = false;
+					})
+				}
+
+			},
+			openlistout3() {
+				this.showlistout3 = true;
+				this.getlistout3();
+
+			},
+			getlistout3() {
+
+				if (this.checkstandrd == '全部标准') {
+					this.checkstandrd = '全部标准';
+					this.listout3.map(val => {
+						val.checked = true;
+					})
+					this.listout3choose = true;
+				} else {
+					let s = this.checkstandrd.split(",");
+
+					s.map(item => {
+						this.listout3.map(val => {
+							if (val.name == item) {
+								val.checked = true;
+							}
+						})
+					})
+					this.listout3choose = false;
+				}
+			},
+
+			closeout3() {
+				//这里关闭弹窗后请求页面数据
+
+			},
+			//选择时间
+			openlistout4() {
+				this.showchecktime = true;
+			},
+			dateoutconfirm(e) {
+				this.checktime = e.startDate + '至' + e.endDate;
+				this.showchecktime = false;
+			},
+
+
+			//目录说明
+			explain() {
+				this.showExplain = true;
+			},
+			confirmExplain() {
+				this.showExplain = false;
+			},
+			//公告
+			toPublic() {
+				this.msgdata = '0';
+				uni.navigateTo({
+					url: '../../pages/public/publicList'
+				})
+			},
+			//回收站
+			toRecycle() {
+				uni.navigateTo({
+					url: '../../pages/recycle/recycle'
+				})
+			},
+			//切换账号
+			toLogin() {
+				uni.clearStorage();
+				uni.clearStorageSync();
+				uni.reLaunch({
+					url: '/pages/login/login'
+				});
+			},
+			// 导出弹框
+			checkOut() {
+				this.chooseModal = true;
+
+			},
+			cancelCheck() {
+				this.chooseModal = false;
+			},
+			confirmCheck() {
+				this.chooseModal = false;
+				this.prograssModel = true;
+			},
+			confirmPrograss(percent) {
+				if (this.percent < 100) {
+					this.percent++;
+					this.confirmPrograss(this.percent)
+				} else {
+
+					if (this.functionid == 3) {
+						if (this.checkpic == '是') {
+							helper.downloadTask(helper.websiteUrl + "v1/downloadcheckpicture?USER_ID=" + uni.getStorageSync("USER_ID") +
+								"&checktime=" + this.checktime)
+
+						}
+						if (this.checktype == '全部数据') {
+							helper.downloadTask(helper.websiteUrl + "v1/downloaddatabasecheck?USER_ID=" + uni.getStorageSync("USER_ID") +
+								"&type=1" + "&checktime=" + this.checktime)
+						} else if (this.checktype == '问题数据') {
+							helper.downloadTask(helper.websiteUrl + "v1/downloaddatabasecheck?USER_ID=" + uni.getStorageSync("USER_ID") +
+								"&type=2" + "&checktime=" + this.checktime)
+
+						}
+					} else {
+						if (this.checkpic == '是') {
+							helper.downloadTask(helper.websiteUrl + "v1/downloadcheckpicture?USER_ID=" + uni.getStorageSync("USER_ID") +
+								"&checktime=" + this.checktime)
+						}
+						if (this.checktype == '全部数据') {
+							helper.downloadTask(helper.websiteUrl + "v1/downloaddatabase?USER_ID=" + uni.getStorageSync("USER_ID") +
+								"&type=1" + "&checktime=" + this.checktime + "&checkstandrd=" + this.checkstandrd)
+						} else if (this.checktype == '问题数据') {
+							helper.downloadTask(helper.websiteUrl + "v1/downloaddatabase?USER_ID=" + uni.getStorageSync("USER_ID") +
+								"&type=2" + "&checktime=" + this.checktime + "&checkstandrd=" + this.checkstandrd)
+
+						}
+
+						this.prograssModel = false;
+						this.showDrawer = false;
+						// this.outModel = true;
+					}
+
+				}
+			},
+			// confirmOut() {
+			// 	this.outModel = false;
+			// },
+			//抽屉是否显示
+			drawer() {
+				this.showDrawer = true;
+			},
+			// 返回
+			back() {
+				if (this.backUrl) {
+					uni.navigateTo({
+						url: this.backUrl
+					})
+				} else {
+					uni.navigateBack({
+						delta: 1
+					})
+				}
+			},
+			onUpload() {
+				let uid = uni.getStorageSync("USER_ID");
+				this.$refs.lFile.upload({
+					// #ifdef APP-PLUS
+					// nvue页面使用时请查阅nvue获取当前webview的api，当前示例为vue窗口
+					currentWebview: this.$mp.page.$getAppWebview(),
+					// #endif
+					//非真实地址，记得更换,调试时ios有跨域，需要后端开启跨域并且接口地址不要使用http://localhost/
+					url: helper.websiteUrl + 'v1/uploadExcel',
+					//默认file,上传文件的key
+					name: 'file',
+					header: {},
+					data: uid,
+				});
+			},
+			onSuccess(res) {
+				let data = JSON.stringify(res)
+				uni.showToast({
+					title: data.data,
+					icon: 'none'
+				})
+			},
+			upload() {
+				helper.downloadTask(helper.websiteUrl + "v1/downloadTemplate")
+			}
+
+		},
+	}
+</script>
+
+<style scoped lang="scss">
+	//弹出框样式
+	/deep/.u-model__title {
+		padding: 24rpx 0;
+	}
+
+	.contentModel {
+		padding: 30rpx;
+
+		.succcess {
+			font-size: 30rpx;
+		}
+
+		.explain {
+			line-height: 50rpx;
+			color: #999999;
+			font-size: 28rpx;
+		}
+	}
+
+	// 头部
+	.head_box {
+		position: relative;
+		z-index: 1000;
+
+
+		.head {
+			position: fixed;
+			width: 100%;
+			top: 0;
+			left: 0;
+			z-index: 99;
+
+
+			.head_title {
+				height: 44px;
+				padding: 0 30rpx;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+
+				.title {
+					flex: 1;
+					font-size: 36rpx;
+					color: #FFFFFF;
+					font-weight: bold;
+					text-align: center;
+					overflow: hidden;
+					white-space: nowrap;
+					text-overflow: ellipsis;
+				}
+
+				.head_back,
+				.drawer {
+					display: flex;
+					align-items: center;
+					width: 88rpx;
+					height: 88rpx;
+					position: absolute;
+				}
+
+			}
+
+
+
+
+		}
+	}
+
+	// 左侧弹出 
+	.person {
+
+		.headpart {
+			background: #6ecac3;
+			padding: 40rpx 30rpx 30rpx 30rpx;
+
+			.headperson {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin: 30rpx 0;
+
+				.imgPart {
+					margin-right: 30rpx;
+					text-align: center;
+					border-radius: 50%;
+
+					image {
+						width: 100rpx;
+						height: 100rpx;
+						border-radius: 50%;
+					}
+				}
+
+				.info {
+					width: 100%;
+					height: 100rpx;
+					flex: 1;
+					line-height: 50rpx;
+					font-size: 28rpx;
+					color: #FFFFFF;
+				}
+			}
+
+			.company {
+				width: 100%;
+				color: #FFFFFF;
+				line-height: 30rpx;
+				font-size: 30rpx;
+				text-align: center;
+
+			}
+		}
+
+		.list-part {
+			margin: 100rpx 0;
+			padding: 30rpx;
+
+			.list {
+				width: 50%;
+				margin: 0 auto 40rpx;
+				font-size: 30rpx;
+				color: #8a8a8a;
+				position: relative;
+				display: flex;
+				align-items: center;
+				flex: 2;
+
+				image {
+					width: 40rpx;
+					height: 40rpx;
+					margin-right: 20rpx;
+				}
+
+				.badge-msg {
+					position: absolute;
+					top: 0 !important;
+					left: 120rpx;
+					right: auto !important;
+
+				}
+
+			}
+		}
+
+	}
+
+	.roleModel {
+		width: 100%;
+		position: relative;
+		padding-top: 90rpx;
+		padding-bottom: 120rpx;
+
+		.roleTop {
+			height: 90rpx;
+			line-height: 90rpx;
+			background: #4abdb4;
+			color: #FFFFFF;
+			font-size: 34rpx;
+			text-align: center;
+			position: fixed;
+			top: 0rpx;
+			width: 100%;
+			z-index: 99;
+		}
+
+		.contentModel {
+
+			padding: 30rpx;
+
+		}
+
+		.roleAction {
+			position: fixed;
+			bottom: 0;
+			height: 100rpx;
+			line-height: 100rpx;
+			display: flex;
+			justify-content: space-around;
+			font-size: 32rpx;
+			width: 100%;
+			background: #FFFFFF;
+
+			.cancel {
+				width: 40%;
+				border: 2rpx solid #dedede;
+				color: #606266;
+				text-align: center;
+				height: 80rpx;
+				line-height: 80rpx;
+				border-radius: 80rpx;
+			}
+
+			.sure {
+				width: 40%;
+				color: #FFFFFF;
+				background: #4abdb4;
+				text-align: center;
+				height: 80rpx;
+				line-height: 80rpx;
+				border: 2rpx solid #4abdb4;
+				border-radius: 80rpx;
+			}
+		}
+	}
+
+	.bottom {
+		position: fixed;
+		bottom: 30rpx;
+		width: 100%;
+		font-size: 28rpx;
+		text-align: center;
+		color: #999999;
+		width: 100%;
+
+	}
+
+	.Model {
+
+		.toptitle {
+			height: 90rpx;
+			line-height: 90rpx;
+			background: #4abdb4;
+			color: #FFFFFF;
+			font-size: 34rpx;
+			text-align: center;
+			position: fixed;
+			top: 0rpx;
+			width: 100%;
+			z-index: 999;
+		}
+
+		.all {
+			margin-top: 100rpx;
+			padding: 0 30rpx;
+		}
+
+		.part {
+			margin-left: 50rpx;
+			padding: 0 30rpx;
+		}
+	}
+</style>

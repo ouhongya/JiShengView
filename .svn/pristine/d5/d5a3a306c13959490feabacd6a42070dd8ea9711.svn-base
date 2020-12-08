@@ -1,0 +1,228 @@
+<template>
+	<view class="public">
+		<a-head bgColor='#4abdb4' text="公告"></a-head>
+		<view class="content">
+			<u-swipe-action v-for="(item, index) in publiclist" :key="index" @open="open" :index="index"
+			 @click="click(item, index)" :show="item.show" class="swipe">
+				<view v-if="publiclist.length>=1" class="list">
+					<view class="title">
+						{{item.title}}
+					</view>
+					<view class="swipetxt">
+						{{item.content}}
+					</view>
+					<u-line color="#dbdbdb" />
+					<view class="info">
+						<view class="left">
+							{{item.NAME}}
+						</view>
+						<view class="right">
+							{{item.created_time}}
+						</view>
+					</view>
+				</view>
+			</u-swipe-action>
+
+			<view class="empty" v-if="publiclist.length <= 0">
+				<image src="../../static/nodata.png" mode=""></image>
+				<view class="empty-tips">
+					暂无公告...
+				</view>
+			</view>
+			<u-loadmore @loadmore="loadmore" bg-color="none" :status="status" :icon-type="iconType" margin="30" :load-text="loadText"
+			 v-if="publiclist.length >=1" />
+		</view>
+	</view>
+</template>
+
+<script>
+	import helper from '@/common/helper.js'
+	export default {
+		data() {
+			return {
+				publiclist: [],
+				// 分页
+				status: 'loadmore', // 下拉加载状态
+				iconType: 'flower',
+				loadText: {
+					loadmore: '点击或上拉加载更多',
+					loading: '正在加载...',
+					nomore: '我也是有底线的'
+				},
+				pages: 1, //实际页数
+				pageNum: 1, //当前下拉加载页数
+				pageSize: 10, //每页的条数
+			}
+		},
+		mounted() {
+			this.init();
+		},
+		methods: {
+			open(index) {
+				this.publiclist[index].show = true;
+				this.publiclist.map((val, idx) => {
+					if (index != idx) this.publiclist[idx].show = false;
+				})
+			},
+			//初始化加载
+			init() {
+				this.status = 'loading';
+				let uid = null;
+				uni.getStorage({key: 'USER_ID',success: function (res) {uid=res.data;}});
+				let param = {
+					page:this.pageNum,
+					size:this.pageSize,
+					uid:uid
+				}
+				helper.request(helper.websiteUrl + 'v1/queryUserByBulletin', param, 'POST', true, res => {
+						if(res.length!=0){
+							res.forEach(item=>{
+								item.show=false
+								this.readByBulletin(item.id,uid)
+							})
+							this.pages=parseInt(res[0].total)
+							const recordsList = res;
+							if (this.pageNum > 1) {
+								this.publiclist = this.publiclist.concat(recordsList);
+							    this.status = 'nomore';
+							} else {
+								this.publiclist = recordsList;
+								this.status = 'nomore';
+							}
+						}else{
+							this.publiclist=[];
+							this.pages = 1;
+							this.pageNum = 1;
+							this.status = 'nomore';
+						}
+				})
+			},
+			// 下拉刷新
+			onPullDownRefresh() {
+				// 初始化数据
+				this.status = 'loadmore';
+				this.pageNum = 1;
+				this.publiclist = [];
+				this.init();
+			},
+			// 上拉加载
+			onReachBottom(e) {
+				if (this.pageNum >= this.pages) {
+					this.status = 'nomore';
+				}else{
+					this.pageNum+=1;
+					this.init();
+				}
+			},
+			//点击加载
+			loadmore() {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				this.init();
+			},
+			jump() {
+				uni.navigateTo({
+					url:'./index/index?flag=open'
+				})
+			},
+			//已读操作
+			readByBulletin(id,uid){
+				let param = {id:id,uid:uid}
+				helper.request(helper.websiteUrl + 'v1/readByBulletin', param, 'POST', true, res => {
+					
+				})
+			}
+		}
+	}
+</script>
+
+<style lang="less" scoped>
+	.public {
+		min-height: 100vh;
+		background: #f6f6f6;
+
+		.top {
+			height: 100rpx;
+			line-height: 100rpx;
+			background: #FFFFFF;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			padding: 0 30rpx;
+			box-shadow: 0px 10rpx 10rpx #dedede;
+
+			.left {
+				display: flex;
+				justify-content: flex-start;
+				align-items: center;
+
+				.line {
+					width: 10rpx;
+					height: 36rpx;
+					border-radius: 10rpx;
+					background: #666666;
+					margin-right: 10rpx;
+				}
+
+				.txt {
+					font-size: 30rpx;
+					color: #666666;
+				}
+			}
+
+			.right {
+				font-size: 30rpx;
+				color: #2979ff;
+			}
+		}
+
+		.content {
+			padding: 20rpx 0 20rpx;
+
+			.swipe {
+				margin-bottom: 10rpx;
+			}
+
+			.list {
+				padding: 20rpx 30rpx;
+				background: #FFFFFF;
+
+				.title {
+					width: 100%;
+					line-height: 60rpx;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					display: -webkit-box;
+					-webkit-line-clamp: 2;
+					-webkit-box-orient: vertical;
+					color: #333333;
+					font-weight: bold;
+					font-size: 30rpx;
+					color: #333333;
+
+				}
+
+				.swipetxt {
+					color: #666666;
+					margin-bottom: 10rpx;
+					line-height: 50rpx;
+					font-size: 28rpx;
+				}
+
+				.info {
+					display: flex;
+					justify-content: space-between;
+					margin-top: 10rpx;
+
+					.left,
+					.right {
+						font-size: 26rpx;
+						color: #999999;
+					}
+				}
+			}
+		}
+	}
+</style>

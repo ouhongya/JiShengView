@@ -1,0 +1,411 @@
+import md5 from '@/common/md5.js';
+//请求的主路径地址 
+// const baseIp = 'http://192.168.1.204:8888/';
+const baseIp = 'http://192.168.1.236:8080/';
+// const baseIp = 'http://192.168.1.11:8080/superviseweb_war_exploded/';
+
+const websiteUrl = baseIp + 'api/';
+
+const addBaseUrl = function(url) {
+
+	if (url == undefined)
+		return "";
+	if (url.startsWith("http"))
+		return url;
+	if (url.length > 4) {
+		let prefix = url.substring(0, 4);
+		if (prefix == 'http') {
+			return url;
+		}
+	}
+
+	return baseIp + url;
+
+}
+/**
+ * 获取当前
+ */
+const now = Date.now || function() {
+	return new Date().getTime();
+};
+
+/**
+ * 将数组转换成字符串
+ */
+const arrayToString = function(array) {
+	let data = "";
+	array.forEach((item) => {
+		data = data + item + ",";
+	});
+
+	if (data.length > 0) {
+		return data.substring(0, data.length - 1);
+	}
+	return data;
+};
+/**
+ * 吐司显示
+ * @param {Object} msg
+ */
+const showToast = function(msg) {
+	uni.showToast({
+		title: msg,
+		icon: "none",
+		duration: 2000
+	});
+};
+
+/**
+ * Img标签取消Style属性 加上max-width:100%
+ * @param {Object} html
+ */
+const resizeImg = function(html) {
+	html = html.replace(/style\s*?=\s*?([‘"])[\s\S]*?\1/ig, '') // 替换styl
+
+	let str = html.replace(/<img[^>]*>/gi, function(match, capture) {
+		let img = match.replace(/style\s*?=\s*?([‘"])[\s\S]*?\1/ig, '') // 替换styl
+		return img.replace(/<img/ig, '<img style="max-width:100%;height:auto;" ');
+	})
+
+	return str;
+}
+
+const deleteHtmlTag = function(str) {
+	str = str.replace(/<[^>]+>|&[^>]+;/g, "").trim(); //去掉所有的html标签和&nbsp;之类的特殊符合
+	return str;
+}
+
+
+/**
+ * 日期处理相关类
+ */
+const dateUtils = {
+	UNITS: {
+		'年': 31557600000,
+		'月': 2629800000,
+		'天': 86400000,
+		'小时': 3600000,
+		'分钟': 60000,
+		'秒': 1000
+	},
+
+	humanize: function(milliseconds) {
+		var humanize = '';
+		for (var key in this.UNITS) {
+			if (milliseconds >= this.UNITS[key]) {
+				humanize = Math.floor(milliseconds / this.UNITS[key]) + key + '前';
+				break;
+			}
+		}
+		return humanize || '刚刚';
+	},
+	format: function(dateStr) {
+		var date = this.parseDate(dateStr)
+		var diff = Date.now() - date.getTime();
+		if (diff < this.UNITS['天']) {
+			return this.humanize(diff);
+		}
+		var _format = function(number) {
+			return (number < 10 ? ('0' + number) : number);
+		};
+		return date.getFullYear() + '/' + _format(date.getMonth() + 1) + '/' + _format(date.getDay()) + '-' +
+			_format(date.getHours()) + ':' + _format(date.getMinutes());
+	},
+	parseDate: function(str) { //将"yyyy-mm-dd HH:MM:ss"格式的字符串，转化为一个Date对象
+		var a = str.split(/[^0-9]/);
+		return new Date(a[0], a[1] - 1, a[2], a[3], a[4], a[5]);
+	},
+	parseString: function(Timestamp) { //转化时间戳,转"yyyy-mm-dd HH:MM"格式的字符串，
+		var now = new Date(Timestamp),
+			y = now.getFullYear(),
+			m = now.getMonth() + 1,
+			d = now.getDate();
+		return y + "-" + (m < 10 ? "0" + m : m) + "-" + (d < 10 ? "0" + d : d) + " " + now.toTimeString().substr(0, 5);
+	},
+	parseStringBySecond: function(Timestamp) { //转化时间戳,转"yyyy-mm-dd HH:MM:ss"格式的字符串，
+		var now = new Date(Timestamp),
+			y = now.getFullYear(),
+			m = now.getMonth() + 1,
+			d = now.getDate();
+		return y + "-" + (m < 10 ? "0" + m : m) + "-" + (d < 10 ? "0" + d : d) + " " + now.toTimeString().substr(0, 8);
+	},
+	parseStringByDay: function(Timestamp) { //转化时间戳,转"yyyy-mm-dd"格式的字符串，
+		var now = new Date(Timestamp),
+			y = now.getFullYear(),
+			m = now.getMonth() + 1,
+			d = now.getDate();
+		return y + "-" + (m < 10 ? "0" + m : m) + "-" + (d < 10 ? "0" + d : d);
+	},
+	parseStringByDay1: function(Timestamp) { //转化时间戳,转"yyyy-mm"格式的字符串，
+		var now = new Date(Timestamp),
+			y = now.getFullYear(),
+			m = now.getMonth() + 1;
+		return y + "-" + (m < 10 ? "0" + m : m);
+	},
+	parseStringByDayAdd: function(Timestamp, day) { //转化时间戳,转"yyyy-mm-dd"格式的字符串，
+		var now = new Date(Timestamp),
+			now = now.setDate(now.getDate() + day),
+			now = new Date(now),
+			y = now.getFullYear(),
+			m = now.getMonth() + 1,
+			d = now.getDate();
+		return y + "-" + (m < 10 ? "0" + m : m) + "-" + (d < 10 ? "0" + d : d);
+	},
+	parseStringByHour: function(Timestamp) { //转化时间戳,转"HH:MM"格式的字符串，
+		var now = new Date(Timestamp),
+			y = now.getFullYear(),
+			m = now.getMonth() + 1,
+			d = now.getDate();
+		return now.toTimeString().substr(0, 5);
+	},
+	formatTime: function(dateStr) {
+		if (!dateStr) {
+			dateStr = dateUtils.parseStringByDay(new Date());
+		}
+		return (new Date(Date.parse(dateStr.replace(/-/g, "/")))).getTime() / 1000;
+	},
+};
+
+/**
+ * 为不同字段格式化日期
+ * @param {Object} list
+ * @param {Object} keys
+ */
+const setTime = function(list, keys) {
+	list.forEach((item) => {
+		keys.forEach((key) => {
+			item[key] = dateUtils.parseString(item[key])
+		});
+	});
+	return list;
+}
+
+
+const formatTime = function(longTime) {
+	return dateUtils.parseString(longTime);
+}
+
+
+/**
+ * 通用上传文件的方法
+ */
+const uploadFile = function(filePath, callbak, error) {
+	uni.uploadFile({
+		url: websiteUrl + "v1/upload", //仅为示例，非真实的接口地址
+		filePath: filePath,
+		name: 'pic',
+		formData: {
+			'uid': uni.getStorageSync("uid"),
+			'token': uni.getStorageSync("token")
+		},
+		fail: (e) => {
+			if (showLoad) {
+				// uni.hideLoading();
+			}
+			showToast('服务器异常请稍后再试');
+			error && error();
+		},
+		success: function(res) {
+			if (res.statusCode == 200) {
+				res.data = JSON.parse(res.data);
+				if (res.data.result == 0) {
+					callbak(res.data.data)
+				} else if (res.data.result == 2) {
+					error && error();
+					showToast('登录失效，请重新登录');
+					uni.removeStorageSync("token");
+					uni.redirectTo({
+						url: '/pages/login/login'
+					});
+				} else {
+					if (res.data.message)
+						showToast(res.data.message);
+					else
+						showToast('服务器异常请稍后再试');
+					error && error();
+				}
+			} else if (res.statusCode == 404) {
+				showToast('访问的资源不存在');
+				error && error();
+			} else if (res.statusCode == 500) {
+				showToast('服务器异常请稍后再试');
+				error && error();
+			} else if (res.statusCode == 405) {
+				showToast('不允许的请求方法');
+				error && error();
+			} else {
+				showToast('未知错误请稍后重试');
+				error && error();
+			}
+		}
+	});
+}
+
+
+const downloadTask = function(url) {
+	uni.downloadFile({
+		url: url, //url
+		success: function(res) {
+			uni.saveFile({
+				tempFilePath: res.tempFilePath, //临时路径
+				success: function(res) {
+					uni.showToast({
+						icon: 'none',
+						mask: true,
+						title: '文件已保存：' + res.savedFilePath, //保存路径
+						duration: 3000,
+					});
+				},
+				fail:function(err){
+					uni.showToast({
+						icon: 'none',
+						mask: true,
+						title: err.errMsg,
+						duration: 3000
+					});
+				}
+				
+			});
+		},
+		
+		fail:function(err){
+			uni.showToast({
+				icon: 'none',
+				mask: true,
+				title: err.errMsg,
+				duration: 3000
+			});
+		}
+	});
+
+}
+
+/**
+ * 通用请求方法
+ */
+const request = function(url, param, m, showLoad, callbak, error) {
+	var name = "fh";
+	for (var d in param) {
+		var d; // 属性名name 
+		name = name + d;
+	}
+	//创建日期对象
+	var date = new Date;
+	//获取年份
+	var yy = date.getFullYear();
+	//获取月份 
+	var mm = date.getMonth() + 1;
+	//如果月份小于10 前面加0
+	mm = (mm < 10 ? "0" + mm : mm);
+	//返回日期 
+	var dd = date.getDate();
+	dd = (dd < 10 ? "0" + dd : dd);
+	var tdr = yy.toString() + mm.toString() + dd.toString()
+
+	var result1 = md5(name + tdr + ',fh,');
+	param.FKEY = result1
+	param.FKEYNAME = name
+	param.uid = uni.getStorageSync("USER_ID");
+	     if (showLoad) {
+		// uni.showLoading({
+		// 	mask: true,
+		// 	title: '加载中...'
+		// })
+	}
+
+	uni.request({
+		url: url,
+		method: m,
+		header: {
+			'Content-Type': 'application/x-www-form-urlencoded'
+		},
+		data: param,
+		fail: (e) => {
+			if (showLoad) {
+				// uni.hideLoading();
+			}
+			showToast('服务器异常请稍后再试');
+			error && error();
+		},
+		success: (res) => {
+			if (showLoad) {
+				// uni.hideLoading();
+			}
+
+			if (res.statusCode == 200) {
+				if (res.data.result == 0) {
+					callbak(res.data.data)
+				} else if (res.data.result == 2) {
+					error && error();
+					showToast('登录失效，请重新登录');
+					uni.removeStorageSync("token");
+					uni.redirectTo({
+						url: '/pages/login/login'
+					});
+				} else {
+					if (res.data.message)
+
+						showToast(res.data.message);
+
+					error && error();
+				}
+			} else if (res.statusCode == 404) {
+				showToast('访问的资源不存在');
+				error && error();
+			} else if (res.statusCode == 500) {
+				showToast('服务器异常请稍后再试');
+				error && error();
+			} else if (res.statusCode == 405) {
+				showToast('不允许的请求方法');
+				error && error();
+			} else {
+				showToast('未知错误请稍后重试');
+				error && error();
+			}
+		}
+	});
+
+
+
+
+}
+
+//RGB转十六进制
+const rgbToHext = function(rgbarr) { // RGB转为16进制数，传入参数为有rgb三个值的数组
+	var hexColor = "#";
+	var hex = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'];
+	for (var i = 0; i < 3; i++) {
+		var r = null;
+		var c = rgbarr[i];
+		var hexAr = [];
+		while (c > 16) {
+			r = c % 16;
+			c = (c / 16) >> 0;
+			hexAr.push(hex[r]);
+		}
+		hexAr.push(hex[c]);
+		if (hexAr.length < 2) {
+			hexAr.push("0")
+		}
+		hexColor += hexAr.reverse().join('');
+	}
+	return hexColor;
+}
+
+export default {
+	websiteUrl,
+	now,
+	showToast,
+	request,
+	dateUtils,
+	setTime,
+	resizeImg,
+	addBaseUrl,
+	baseIp,
+	uploadFile,
+	downloadTask,
+	arrayToString,
+	formatTime,
+	deleteHtmlTag,
+	rgbToHext
+}

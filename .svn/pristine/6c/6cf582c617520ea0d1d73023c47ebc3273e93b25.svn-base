@@ -1,0 +1,1348 @@
+<template>
+	<view class="statistics">
+		<u-sticky :offset-top="offset">
+			<view class="condition">
+				<view class="search-part">
+					<view class="limit">
+						<u-input v-model="fromlist.list1" type="select" :border="true" @click="openlist1()" height="70" />
+						<!--选择单位弹框 -->
+						<u-popup v-model="showlist1" :mode="curMode" width="40%" height="80%" @close="close1">
+							<view class="Model">
+								<view class="toptitle">
+									单位筛选
+								</view>
+								<view class="top-part" v-if="list1.length>0">
+									<view class="all">
+										<u-checkbox-group @change="checkedAll">
+											<u-checkbox v-model="list1choose" active-color="#4abdb4">全部单位</u-checkbox>
+										</u-checkbox-group>
+									</view>
+									<view class="part">
+										<scroll-view scroll-y style="height:60vh;width: 100%;" @scrolltolower="onreachBottom">
+											<u-checkbox-group @change="checkboxGroupChange" :wrap="true">
+												<u-checkbox @change="checkboxChange" v-model="item.checked" v-for="(item, index) in list1" :key="index"
+												 :name="item.name" active-color="#4abdb4">{{item.name}}</u-checkbox>
+											</u-checkbox-group>
+											<u-loadmore @loadmore="loadmore" bg-color="none" :status="status" :icon-type="iconType" margin-top="30"
+											 margin-bottom="30" :load-text="loadText" v-if="list1.length >=1" />
+										</scroll-view>
+									</view>
+								</view>
+								<view class="empty" v-else>
+									<image src="../../static/nodata.png" mode=""></image>
+									<view class="empty-tips">
+										暂无数据
+									</view>
+								</view>
+								
+							</view>
+						</u-popup>
+					</view>
+				</view>
+				<view class="search-part">
+					<view class="limit">
+						<u-input v-model="fromlist.list2" type="select" :border="true" @click="openlist2()" height="70" />
+						<!--选择人员弹框 -->
+						<u-popup v-model="showlist2" :mode="curMode" width="40%" height="80%" @close="close2">
+							<view class="Model">
+								<view class="toptitle">
+									人员筛选
+								</view>
+								<view class="top-part" v-if="list2.length>0">
+									<view class="all">
+										<u-checkbox-group @change="checkedAll2">
+											<u-checkbox v-model="list2choose" active-color="#4abdb4">全部人员</u-checkbox>
+										</u-checkbox-group>
+									</view>
+									<view class="part">
+										<scroll-view scroll-y style="height:60vh;width: 100%;" @scrolltolower="onreachBottom2">
+											<u-checkbox-group @change="checkboxGroupChange2" :wrap="true">
+												<u-checkbox @change="checkboxChange2" v-model="item.checked" v-for="(item, index) in list2" :key="index"
+												 :name="item.name" active-color="#4abdb4">{{item.name}}</u-checkbox>
+											</u-checkbox-group>
+											<u-loadmore @loadmore="loadmore2" bg-color="none" :status="status" :icon-type="iconType" margin-top="30"
+											 margin-bottom="30" :load-text="loadText" v-if="list2.length >=1" />
+										</scroll-view>
+									</view>
+								</view>
+								<view class="empty" v-else>
+									<image src="../../static/nodata.png" mode=""></image>
+									<view class="empty-tips">
+										暂无数据
+									</view>
+								</view>
+							</view>
+						</u-popup>
+					</view>
+				</view>
+				<view class="search-part">
+					<view class="limit">
+						<u-input v-model="fromlist.list3" type="select" :border="true" @click="openlist3()" height="70" />
+						<!--选择准则弹框 -->
+						<u-popup v-model="showlist3" :mode="curMode" width="40%" height="80%" @close="close3">
+							<view class="Model">
+								<view class="toptitle">
+									准则筛选
+								</view>
+								<view class="top-part" v-if="list3.length>0">
+									<view class="all">
+										<u-checkbox-group @change="checkedAll3">
+											<u-checkbox v-model="list3choose" active-color="#4abdb4">全部准则</u-checkbox>
+										</u-checkbox-group>
+									</view>
+									<view class="part">
+										<scroll-view scroll-y style="height:60vh;width: 100%;" @scrolltolower="onreachBottom3">
+											<u-checkbox-group @change="checkboxGroupChange3" :wrap="true">
+												<u-checkbox @change="checkboxChange3" v-model="item.checked" v-for="(item, index) in list3" :key="index"
+												 :name="item.name" active-color="#4abdb4">{{item.name}}</u-checkbox>
+											</u-checkbox-group>
+											<u-loadmore @loadmore="loadmore3" bg-color="none" :status="status" :icon-type="iconType" margin-top="30"
+											 margin-bottom="30" :load-text="loadText" v-if="list3.length >=1" />
+										</scroll-view>
+									</view>
+								</view>
+								<view class="empty" v-else>
+									<image src="../../static/nodata.png" mode=""></image>
+									<view class="empty-tips">
+										暂无数据
+									</view>
+								</view>
+							</view>
+						</u-popup>
+					</view>
+				</view>
+			</view>
+		</u-sticky>
+		<view class="table-part">
+			<view class="part">
+				<view class="table-title">
+					<view class="line"></view>
+					<view class="txt">
+						总体完成情况
+					</view>
+				</view>
+				<view class="table-content">
+					<canvas canvas-id="table1" id="table1" class="charts1"></canvas>
+				</view>
+			</view>
+			<view class="part">
+				<view class="table-title">
+					<view class="line"></view>
+					<view class="txt">
+						总体完成明细表
+					</view>
+				</view>
+				<view class="table-content">
+					<u-table >
+						<u-tr v-if="functionid==1">
+							<u-th>检查单位</u-th>
+							<u-th>检查组长</u-th>
+							<u-th>进度</u-th>
+							<u-th>状态</u-th>
+							<u-th>问题数量</u-th>
+						</u-tr>
+							<u-tr v-else>
+								<u-th>任务名称</u-th>
+								<u-th>检查人</u-th>
+								<u-th>进度</u-th>
+								<u-th>状态</u-th>
+								<u-th>问题数量</u-th>
+							</u-tr>
+					</u-table>
+					<view class="empty" v-if="TaskOverDetail.length<=0">
+						<image src="../../static/nodata.png" mode=""></image>
+						<view class="empty-tips">
+							暂无数据
+						</view>
+					</view>
+					<scroll-view scroll-y style="height:300rpx;" @scrolltolower="onreachBottom4" v-else>
+						<u-table>
+							<u-tr v-for="item in TaskOverDetail">
+								<u-td width="20%">{{item.unitName}}</u-td>
+								<u-td width="20%">{{item.name}}</u-td>
+								<u-td width="20%">{{item.censor}}/{{item.total_censor}}</u-td>
+								<u-td width="20%">
+									<view class="state gray" v-if="item.status==1">
+										未开始
+									</view>
+									<view class="state blue" v-if="item.status==2">
+										进行中
+									</view>
+									<view class="state green" v-if="item.status==3">
+										已完成
+									</view>
+									<view class="state red" v-if="item.status==4">
+										已上报
+									</view>
+									<view class="state yellow" v-if="item.status==5">
+										已延期
+									</view>
+									<view class="state yellow" v-if="item.status==6">
+										延期完成
+									</view>
+									<view class="state yellow" v-if="item.status==7">
+										未上报
+									</view>
+									<view class="state yellow" v-if="item.status==8">
+										待审核
+									</view>
+									<view class="state yellow" v-if="item.status==9">
+										已完结
+									</view>
+									<view class="state yellow" v-if="item.status==10">
+										审核驳回
+									</view>
+								</u-td>
+								<u-td>{{item.total_issue}}</u-td>
+							</u-tr>
+						</u-table>
+						<u-loadmore @loadmore="loadmore4" bg-color="none" :status="status" :icon-type="iconType" margin-top="30"
+						 margin-bottom="30" :load-text="loadText" />
+					</scroll-view>
+				</view>
+			</view>
+			<view class="part">
+				<view class="table-title">
+					<view class="line"></view>
+					<view class="txt">
+						检查单位问题统计图
+					</view>
+				</view>
+				<view class="table-content">
+					<canvas canvas-id="table2" id="table2" class="charts" @touchstart="touchTable2"></canvas>
+				</view>
+			</view>
+			<view class="part">
+				<view class="table-title">
+					<view class="line"></view>
+					<view class="txt">
+						检查单位问题数量占比图
+					</view>
+				</view>
+				<view class="table-content">
+					<canvas canvas-id="table3" id="table3" class="charts" @touchstart="touchTable3"></canvas>
+				</view>
+			</view>
+			<view class="part">
+				<view class="table-title">
+					<view class="line"></view>
+					<view class="txt">
+						检查模块问题统计图
+					</view>
+				</view>
+				<view class="table-content">
+					<canvas canvas-id="table4" id="table4" class="charts" @touchstart="touchTable4"></canvas>
+				</view>
+			</view>
+			<view class="part">
+				<view class="table-title">
+					<view class="line"></view>
+					<view class="txt">
+						相同问题数量统计图
+					</view>
+				</view>
+				<view class="table-content">
+					<canvas canvas-id="table5" id="table5" class="charts" @touchstart="touchTable5"></canvas>
+				</view>
+			</view>
+			<view class="part" v-if="functionid==1">
+				<view class="table-title">
+					<view class="line"></view>
+					<view class="txt">
+						工作量统计表
+					</view>
+				</view>
+				<view class="table-content">
+					<u-table>
+						<u-tr>
+							<u-th>姓名</u-th>
+							<u-th>检查量</u-th>
+							<u-th>发现问题量</u-th>
+							<u-th>解决问题量</u-th>
+							<u-th>整改通过率</u-th>
+						</u-tr>
+					</u-table>
+					<view class="empty" v-if="workload.length==0">
+						<image src="../../static/nodata.png" mode=""></image>
+						<view class="empty-tips">
+							暂无数据
+						</view>
+					</view>
+					<scroll-view scroll-y style="height:300rpx;" @scrolltolower="onreachBottom5" v-else>
+						<u-table>
+							<u-tr v-for="item in workload">
+								<u-td width="20%">{{item.name}}</u-td>
+								<u-td width="20%">{{item.checked}}</u-td>
+								<u-td width="20%">{{item.total_issue}}</u-td>
+								<u-td width="20%">{{item.solved_issue}}</u-td>
+								<u-td width="20%">0</u-td>
+							</u-tr>
+						</u-table>
+						<u-loadmore @loadmore="loadmore5" bg-color="none" :status="status" :icon-type="iconType" margin-top="30"
+						 margin-bottom="30" :load-text="loadText" />
+					</scroll-view>
+
+				</view>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import uCharts from '@/components/u-charts/u-charts.js';
+	import helper from '@/common/helper.js'
+	var _self;
+	var table1 = null;
+	var table2 = null;
+	var table3 = null;
+	var table4 = null;
+	var table5 = null;
+	export default {
+		props: {
+			offset: {
+				type: Number,
+				default: 0
+			},
+			curMode:{
+				type:String,
+				default:'bottom'
+			}
+		},
+		data() {
+			return {
+				//搜索部分
+				list1: [],
+				showlist1: false,
+				list1choose: true,
+				list2: [],
+				showlist2: false,
+				list2choose: true,
+				list3: [],
+				showlist3: false,
+				list3choose: true,
+				fromlist: {
+					list1: '全部单位',
+					list2: '全部人员',
+					list3: '全部准则',
+				},
+				pixelRatio: 1,
+				//圆弧进度图
+				cWidth1: '',
+				cHeight1: '',
+				arcbarWidth: '15',
+				arcbar: [{
+					name: '总体完成情况',
+					data: 0,
+					color: '#2fc25b'
+				}],
+				//柱状图(单位问题)
+				cWidth2: '',
+				cHeight2: '',
+				Unit: {
+					"categories": ["xxx公司", "xxx公司", "xxx公司", "xxx公司", "xxx公司", "xxx公司"],
+					"series": [{
+						"name": "问题数",
+						"data": [{
+							"value": 40,
+							"grade": 120
+						}, {
+							"value": 44,
+							"grade": 120
+						}, {
+							"value": 56,
+							"grade": 120
+						}, {
+							"value": 67,
+							"grade": 120
+						}, {
+							"value": 40,
+							"grade": 120
+						}, {
+							"value": 40,
+							"grade": 120
+						}, ]
+					}]
+				},
+				//饼图(单位问题)
+				cWidth3: '',
+				cHeight3: '',
+				Pie: {
+					"series": [{
+						"name": "xxx公司",
+						"data": 50
+					}, {
+						"name": "xxx公司",
+						"data": 30
+					}, {
+						"name": "xxx公司",
+						"data": 20
+					}, {
+						"name": "xxx公司",
+						"data": 18
+					}, {
+						"name": "xxx公司",
+						"data": 8
+					}]
+				},
+				//柱状图(检查模块问题)
+				cWidth4: '',
+				cHeight4: '',
+				Check: {
+					"categories": ["模块1", "模块2", "模块3", "模块4", "模块5", "模块6"],
+					"series": [{
+						"name": "检查模块问题数",
+						"data": [{
+							"value": 40,
+							"grade": 120
+						}, {
+							"value": 44,
+							"grade": 120
+						}, {
+							"value": 56,
+							"grade": 120
+						}, {
+							"value": 67,
+							"grade": 120
+						}, {
+							"value": 40,
+							"grade": 120
+						}, {
+							"value": 40,
+							"grade": 120
+						}, ]
+					}]
+				},
+				//柱状图(相同问题)
+				cWidth5: '',
+				cHeight5: '',
+				Similar: {
+					"categories": ["xxx公司", "xxx公司", "xxx公司", "xxx公司", "xxx公司", "xxx公司"],
+					"series": [{
+						"name": "检查单位相同问题数量",
+						"data": [{
+							"value": 40,
+							"grade": 120
+						}, {
+							"value": 44,
+							"grade": 120
+						}, {
+							"value": 56,
+							"grade": 120
+						}, {
+							"value": 67,
+							"grade": 120
+						}, {
+							"value": 40,
+							"grade": 120
+						}, {
+							"value": 40,
+							"grade": 120
+						}, ]
+					}]
+				},
+				// 分页
+				status: 'loadmore', // 下拉加载状态
+				iconType: 'flower',
+				loadText: {
+					loadmore: '点击或上拉加载更多',
+					loading: '正在加载...',
+					nomore: '我也是有底线的'
+				},
+				pages: 1, //实际页数
+				pageNum: 1, //当前下拉加载页数
+				pageSize: 10, //每页的条数
+				uid: null,
+				TaskOverDetail:[],
+				functionid:2,
+				workload:[]
+			};
+		},
+		created() {
+			this.queryUnitList()
+			this.queryUserByTaskToUser()
+			this.queryUserNormList()
+			this.functionid = uni.getStorageSync("functionid")
+		},
+		mounted() {
+			this.queryStatisticsList([], [], [], 3);
+			_self = this;
+			this.uid = uni.getStorageSync("USER_ID")
+			//圆弧进度图
+			this.cWidth1 = uni.upx2px(690);
+			this.cHeight1 = uni.upx2px(400);
+			//柱状图(单位问题)
+			this.cWidth2 = uni.upx2px(690);
+			this.cHeight2 = uni.upx2px(500);
+			//饼图(单位问题)
+			this.cWidth3 = uni.upx2px(690);
+			this.cHeight3 = uni.upx2px(500);
+			//柱状图(检查模块问题)
+			this.cWidth4 = uni.upx2px(690);
+			this.cHeight4 = uni.upx2px(500);
+			//柱状图(相同问题)
+			this.cWidth5 = uni.upx2px(690);
+			this.cHeight5 = uni.upx2px(500);
+		},
+		methods: {
+			//选择单位
+			checkboxChange(e) {},
+			// 选中任一checkbox时，由checkbox-group触发
+			checkboxGroupChange(e) {
+				this.fromlist.list1 = '';
+				e.map(val => {
+					this.fromlist.list1 += val + ',';
+				})
+				this.fromlist.list1=this.fromlist.list1.slice(0,this.fromlist.list1.length-1)
+				if (e.length == this.list1.length) {
+					this.list1choose = true;
+					this.fromlist.list1 = '全部单位';
+				} else {
+					this.list1choose = false;
+				}
+			},
+			// 全选
+			checkedAll() {
+				if (this.list1choose == true) {
+					this.list1.map(val => {
+						val.checked = true;
+						this.fromlist.list1 = '全部单位';
+					})
+				} else {
+					this.list1.map(val => {
+						val.checked = false;
+					})
+				}
+
+			},
+			openlist1() {
+				this.showlist1 = true;
+				this.pageNum = 1;
+				this.pages = 1;
+				this.status = 'loadmore';
+				this.getlist1();
+
+			},
+			getlist1() {
+				this.status = 'loading';
+				const recordsList = this.list1; //模拟请求到的数据
+				if (this.pageNum > 1) {
+					this.list1 = this.list1.concat(recordsList);
+				} else {
+					this.list1 = recordsList;
+					this.status = 'nomore';
+				}
+				uni.stopPullDownRefresh();
+				this.pages = 3; //模拟页数最大等于3
+				this.pageNum++;
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+				}
+				if (this.fromlist.list1 == '全部单位') {
+					this.fromlist.list1 = '全部单位';
+					this.list1.map(val => {
+						val.checked = true;
+					})
+					this.list1choose = true;
+				} else {
+					let s = this.fromlist.list1.split(",");
+					s.map(item => {
+						this.list1.map(val => {
+							if (val.name == item) {
+								val.checked = true;
+							}
+						})
+					})
+					this.list1choose = false;
+				}
+			},
+			// 上拉加载
+			onreachBottom(e) {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				this.getlist1();
+			},
+			loadmore() {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				this.getlist1();
+			},
+			close1() {
+				//这里关闭弹窗后请求页面数据
+				this.showlist1 = false;
+				this.pageNum = 1;
+				this.pages = 1;
+				this.status = 'loadmore';
+				//this.getlist3();
+				let list3 = []
+				this.list3.forEach(item => {
+					if (item.checked) {
+						list3.push(item.id)
+					}
+				})
+				let list2 = []
+				this.list2.forEach(item => {
+					if (item.checked) {
+						list2.push(item.id)
+					}
+				})
+				let list1 = []
+				this.list1.forEach(item => {
+					if (item.checked) {
+						list1.push(item.id)
+					}
+				})
+				this.queryStatisticsList(list1, list2, list3, 2)
+			},
+			//选择人员
+			checkboxChange2(e) {},
+			checkboxGroupChange2(e) {
+				this.fromlist.list2 = '';
+				e.map(val => {
+					this.fromlist.list2 += val + ',';
+				})
+				this.fromlist.list2=this.fromlist.list2.slice(0,this.fromlist.list2.length-1)
+				if (e.length == this.list2.length) {
+					this.list2choose = true;
+					this.fromlist.list2 = '全部人员';
+				} else {
+					this.list2choose = false;
+				}
+			},
+			// 全选
+			checkedAll2() {
+				if (this.list2choose == true) {
+					this.list2.map(val => {
+						val.checked = true;
+						this.fromlist.list2 = '全部人员';
+					})
+				} else {
+					this.list1.map(val => {
+						val.checked = false;
+					})
+				}
+
+			},
+			openlist2() {
+				this.showlist2 = true;
+				this.pageNum = 1;
+				this.pages = 1;
+				this.status = 'loadmore';
+				this.getlist2();
+
+			},
+			getlist2() {
+				this.status = 'loading';
+				const recordsList = this.list2; //模拟请求到的数据
+				if (this.pageNum > 1) {
+					this.list2 = this.list2.concat(recordsList);
+				} else {
+					this.list2 = recordsList;
+					this.status = 'nomore';
+				}
+				uni.stopPullDownRefresh();
+				this.pages = 3; //模拟页数最大等于3
+				this.pageNum++;
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+				}
+				if (this.fromlist.list2 == '全部人员') {
+					this.fromlist.list2 = '全部人员';
+					this.list2.map(val => {
+						val.checked = true;
+					})
+					this.list2choose = true;
+				} else {
+					let s = this.fromlist.list2.split(",");
+					s.map(item => {
+						this.list2.map(val => {
+							if (val.name == item) {
+								val.checked = true;
+							}
+						})
+					})
+					this.list2choose = false;
+				}
+			},
+			// 上拉加载
+			onreachBottom2(e) {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				this.getlist2();
+			},
+			loadmore2() {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				this.getlist2();
+			},
+			close2() {
+				this.showlist2 = false;
+				this.pageNum = 1;
+				this.pages = 1;
+				this.status = 'loadmore';
+				//this.getlist3();
+				let list3 = []
+				this.list3.forEach(item => {
+					if (item.checked) {
+						list3.push(item.id)
+					}
+				})
+				let list2 = []
+				this.list2.forEach(item => {
+					if (item.checked) {
+						list2.push(item.id)
+					}
+				})
+				let list1 = []
+				this.list1.forEach(item => {
+					if (item.checked) {
+						list1.push(item.id)
+					}
+				})
+				this.queryStatisticsList(list1, list2, list3, 2)
+			},
+			//选择单位
+			checkboxChange3(e) {},
+			// 选中任一checkbox时，由checkbox-group触发
+			checkboxGroupChange3(e) {
+				this.fromlist.list3 = '';
+				e.map(val => {
+					this.fromlist.list3 += val + ',';
+					
+				})
+				this.fromlist.list3=this.fromlist.list3.slice(0,this.fromlist.list3.length-1)
+				if (e.length == this.list3.length) {
+					this.list3choose = true;
+					this.fromlist.list3 = '全部准则';
+				} else {
+					this.list3choose = false;
+				}
+			},
+			// 全选
+			checkedAll3() {
+				if (this.list3choose == true) {
+					this.list3.map(val => {
+						val.checked = true;
+						this.fromlist.list3 = '全部准则';
+					})
+				} else {
+					this.list3.map(val => {
+						val.checked = false;
+					})
+				}
+
+			},
+			openlist3() {
+				this.showlist3 = true;
+				this.pageNum = 1;
+				this.pages = 1;
+				this.status = 'loadmore';
+				this.getlist3();
+			},
+			getlist3() {
+				this.status = 'loading';
+				const recordsList = this.list3; //模拟请求到的数据
+				if (this.pageNum > 1) {
+					this.list3 = this.list3.concat(recordsList);
+				} else {
+					this.list3 = recordsList;
+					this.status = 'nomore';
+				}
+				uni.stopPullDownRefresh();
+				this.pages = 3; //模拟页数最大等于3
+				this.pageNum++;
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+				}
+				if (this.fromlist.list3 == '全部准则') {
+					this.fromlist.list3 = '全部准则';
+					this.list3.map(val => {
+						val.checked = true;
+					})
+					this.list3choose = true;
+				} else {
+					let s = this.fromlist.list3.split(",");
+					console.log(s, 'ssss')
+					s.map(item => {
+						this.list3.map(val => {
+							if (val.name == item) {
+								val.checked = true;
+							}
+						})
+					})
+					this.list3choose = false;
+				}
+			},
+			// 上拉加载
+			onreachBottom3(e) {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				this.getlist3();
+			},
+			loadmore3() {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				this.getlist3();
+			},
+			close3() {
+				//这里关闭弹窗后请求页面数据
+				this.showlist3 = false;
+				this.pageNum = 1;
+				this.pages = 1;
+				this.status = 'loadmore';
+				//this.getlist3();
+				let list3 = []
+				this.list3.forEach(item => {
+					if (item.checked) {
+						list3.push(item.id)
+					}
+				})
+				let list2 = []
+				this.list2.forEach(item => {
+					if (item.checked) {
+						list2.push(item.id)
+					}
+				})
+				let list1 = []
+				this.list1.forEach(item => {
+					if (item.checked) {
+						list1.push(item.id)
+					}
+				})
+				this.queryStatisticsList(list1, list2, list3, 2)
+			},
+			//统计表格
+			onreachBottom4(e) {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+
+			},
+			loadmore4() {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+
+			},
+			onreachBottom5(e) {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+
+			},
+			loadmore5() {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+
+			},
+			//圆弧进度图
+			getRingData() {
+				table1 = new uCharts({
+					$this: this,
+					canvasId: 'table1', //这里是ID
+					type: 'arcbar',
+					fontSize: 11,
+					legend: {
+						show: false
+					},
+					background: '#FFFFFF',
+					pixelRatio: 1,
+					series: this.arcbar, //这里是数据
+					animation: true,
+					width: this.cWidth1,
+					height: this.cHeight1,
+					dataLabel: true,
+					title: {
+						name: this.arcbar[0].data + '%',
+						color: this.arcbar[0].color,
+						fontSize: 25
+					},
+					extra: {
+						arcbar: {
+							type: 'circle', //整圆类型进度条图
+							width: _self.arcbarWidth * _self.pixelRatio, //圆弧的宽度
+							startAngle: 0.5 //整圆类型只需配置起始角度即可
+						}
+					}
+				});
+			},
+			//柱状图(单位问题)
+			getUnitData() {
+				table2 = new uCharts({
+					$this: this,
+					canvasId: 'table2',
+					type: 'column',
+					legend: {
+						show: false
+					},
+					fontSize: 11,
+					background: '#FFFFFF',
+					pixelRatio: 1,
+					animation: true,
+					categories: this.Unit.categories,
+					series: this.Unit.series,
+					enableScroll: true,
+					xAxis: {
+						disableGrid: true,
+						scrollShow:true,//新增是否显示滚动条，默认false
+						scrollAlign:'left',//滚动条初始位置
+					},
+					yAxis: {
+						//disabled:true
+					},
+					dataLabel: true,
+					width: this.cWidth2,
+					height: this.cHeight2,
+					extra: {
+						column: {
+							type: 'group',
+							width: 20
+						}
+					}
+				});
+			},
+			touchTable2(e) {
+				// table2.showToolTip(e, {
+				// 	format: function(item, category) {
+				// 		if (typeof item.data === 'object') {
+				// 			return category + ' ' + item.name + ':' + item.data.value
+				// 		} else {
+				// 			return category + ' ' + item.name + ':' + item.data
+				// 		}
+				// 	}
+				// });
+			},
+			//饼图(单位问题)
+			getPieData() {
+				table3 = new uCharts({
+					$this: _self,
+					canvasId: 'table3',
+					type: 'pie',
+					fontSize: 11,
+					legend: {
+						show: false
+					},
+					background: '#FFFFFF',
+					pixelRatio: _self.pixelRatio,
+					series: this.Pie.series,
+					animation: true,
+					width: _self.cWidth3,
+					height: _self.cHeight3,
+					dataLabel: true,
+					extra: {
+						pie: {
+							lableWidth: 15
+						}
+					},
+				});
+				//数据改变后执行
+				// let data=this.Pie.series
+				// table3.updateData(data) 
+			},
+			touchTable3(e) {
+				// table3.showToolTip(e, {
+				// 	format: function(item) {
+				// 		return item.name + ':' + '问题数' + item.data
+				// 	}
+				// });
+			},
+			//柱状图(检查模块问题)
+			getCheckData() {
+				table4 = new uCharts({
+					$this: this,
+					canvasId: 'table4',
+					type: 'column',
+					legend: {
+						show: false
+					},
+					fontSize: 11,
+					background: '#FFFFFF',
+					pixelRatio: 1,
+					animation: true,
+					categories: this.Check.categories,
+					series: this.Check.series,
+					enableScroll: true,
+					xAxis: {
+						disableGrid: true,
+						scrollShow:true,//新增是否显示滚动条，默认false
+						scrollAlign:'left',//滚动条初始位置
+					},
+					yAxis: {
+						//disabled:true
+					},
+					dataLabel: true,
+					width: this.cWidth4,
+					height: this.cHeight4,
+					extra: {
+						column: {
+							type: 'group',
+							width: 20
+						}
+					}
+				});
+			},
+			touchTable4(e) {
+				// table4.showToolTip(e, {
+				// 	format: function(item, category) {
+				// 		if (typeof item.data === 'object') {
+				// 			return category + ' ' + item.name + ':' + item.data.value
+				// 		} else {
+				// 			return category + ' ' + item.name + ':' + item.data
+				// 		}
+				// 	}
+				// });
+			},
+			//柱状图(相同问题)
+			getSimilarData() {
+				table5 = new uCharts({
+					$this: this,
+					canvasId: 'table5',
+					type: 'column',
+					legend: {
+						show: false
+					},
+					fontSize: 11,
+					background: '#FFFFFF',
+					pixelRatio: 1,
+					animation: true,
+					categories: this.Similar.categories,
+					series: this.Similar.series,
+					enableScroll: true,
+					xAxis: {
+						scrollShow:true,//新增是否显示滚动条，默认false
+						scrollAlign:'left',//滚动条初始位置
+						disableGrid: true,
+					},
+					yAxis: {
+						//disabled:true
+					},
+					dataLabel: true,
+					width: this.cWidth5,
+					height: this.cHeight5,
+					extra: {
+						column: {
+							type: 'group',
+							width: 20
+						}
+					}
+				});
+			},
+			touchTable5(e) {
+				// table5.showToolTip(e, {
+				// 	format: function(item, category) {
+				// 		if (typeof item.data === 'object') {
+				// 			return category + ' ' + item.name + ':' + item.data.value
+				// 		} else {
+				// 			return category + ' ' + item.name + ':' + item.data
+				// 		}
+				// 	}
+				// });
+			},
+			//拉去单位列表
+			queryUnitList() {
+				let _this = this
+				helper.request(helper.websiteUrl + 'v1/queryUnitList', {
+					uid: this.uid
+				}, 'POST', true, res => {
+					if (res != null) {
+						res.forEach(item => {
+							this.list1.push({
+								checked: false,
+								name: item.name,
+								id: item.id
+							})
+						})
+						this.list1 = this.arrayReduce(this.list1)
+					}
+				})
+			},
+			//去啦用户的数据
+			queryUserByTaskToUser() {
+				helper.request(helper.websiteUrl + 'v1/queryUserByTaskToUser', {
+					uid: this.uid
+				}, 'POST', true, res => {
+					if (res != null) {
+						res.forEach(item => {
+							this.list2.push({
+								checked: false,
+								name: item.NAME,
+								id: item.USER_ID
+							})
+						})
+						this.list2 = this.arrayReduce(this.list2)
+					}
+				})
+			},
+			//去啦excel的数据
+			queryUserNormList() {
+				helper.request(helper.websiteUrl + 'v1/queryUserNormList', {
+					uid: this.uid
+				}, 'POST', true, res => {
+					if (res != null) {
+						res.forEach(item => {
+							this.list3.push({
+								checked: false,
+								name: item.name,
+								id: item.id
+							})
+						})
+						this.list3 = this.arrayReduce(this.list3)
+					}
+				})
+			},
+			//拉去统计图的列表
+			queryStatisticsList(unitId, userId, excelId, num) {
+				let param = {
+					unitId: unitId,
+					userId: userId,
+					excelId: excelId,
+					num: num
+				}
+				let data = {
+					uid: this.uid,
+					param: JSON.stringify(param)
+				}
+				helper.request(helper.websiteUrl + 'v1/queryStatisticsList', data, 'POST', true, res => {
+					if (res != null) {
+						this.arcbar = [{
+							name: '总体完成情况',
+							data: res.speed,
+							color: '#2fc25b'
+						}]
+						if (res.siteList.length != 0) {
+							//柱状图
+							let unitName = []
+							let data = []
+							res.siteList.forEach(item => {
+								unitName.push(item.key)
+								item.value.forEach(val => {
+									data.push({
+										value: parseInt(val.totalIssue),
+										grade: parseInt(val.totalScore)
+									})
+								})
+							})
+							this.Unit = {
+								categories: unitName,
+								series: [{
+									name: "问题数",
+									data: data
+								}]
+							}
+							//饼图
+							let arr = []
+							res.siteList.forEach(item => {
+								let obj = {}
+								item.value.forEach(val => {
+									obj = {
+										data: parseInt(val.totalIssue),
+										grade: val.totalScore
+									}
+								})
+								obj.name = item.key
+								arr.push(obj)
+							})
+							this.Pie = {
+								series: arr,
+							}
+						}
+						if (res.issueModule.length != 0) {
+							let arr = []
+							let array = []
+							res.issueModule.forEach(val => {
+								if (parseInt(val.totalIssue) != 0) {
+									arr.push(val.item)
+									array.push({
+										value: parseInt(val.totalIssue),
+										grade: parseInt(val.totalScore)
+									})
+								}
+							})
+							
+							this.Check = {
+								"categories": arr,
+								"series": [{
+									"name": "问题数",
+									"data": array,
+								}],
+							}
+						}
+						if (res.issueCountIds.length != 0) {
+							let arr = []
+							let obj = []
+							res.issueCountIds.forEach(item => {
+								arr.push(item.name)
+								obj.push({
+									value: item.num,
+									grade: 0
+								})
+							})
+
+							this.Similar = {
+								categories: arr,
+								series: [{
+									name: "检查单位相同问题数量",
+									data: obj
+								}]
+							}
+						}
+						this.getRingData();
+						this.getUnitData();
+						this.getPieData();
+						this.getCheckData();
+						this.getSimilarData();
+					}
+				})
+				this.queryTaskOverDetail(data)
+				
+				// this.queryWorkload(data)
+			},
+			//拉去完成明细
+			queryTaskOverDetail(data){
+				helper.request(helper.websiteUrl + 'v1/queryTaskOverDetail', data, 'POST', true, res => {
+					if(res.length!=0){
+						this.TaskOverDetail=res
+					}
+				})
+			},
+			//拉去工作量
+			queryWorkload(data){
+				helper.request(helper.websiteUrl + 'v1/queryWorkload', data, 'POST', true, res => {
+					if(res.length!=0){
+						this.workload=res
+					}
+				})
+			},
+			arrayReduce(arr) {
+				var obj = {};
+				arr = arr.reduce(function(item, next) {
+					obj[next.id] ? '' : obj[next.id] = true && item.push(next);
+					return item;
+				}, []);
+				return arr;
+			}
+		}
+	}
+</script>
+<style lang="less" scoped>
+	/deep/.u-th {
+		font-size: 24rpx !important;
+	}
+
+	// 筛选弹窗
+	.Model {
+		.toptitle {
+			height: 90rpx;
+			line-height: 90rpx;
+			background: #4abdb4;
+			color: #FFFFFF;
+			font-size: 34rpx;
+			text-align: center;
+			position: fixed;
+			top: 0rpx;
+			width: 100%;
+			z-index: 999;
+		}
+
+		.all {
+			margin-top: 100rpx;
+			padding: 0 30rpx;
+		}
+
+		.part {
+			margin-left: 50rpx;
+			padding: 0 30rpx;
+		}
+	}
+
+	.charts {
+		width: 100%;
+		height: 500upx;
+		background-color: #FFFFFF;
+	}
+
+	.charts1 {
+		width: 100%;
+		height: 400upx;
+		background-color: #FFFFFF;
+	}
+
+
+	.statistics {
+		position: relative;
+		background: #FFFFFF;
+		padding-bottom: 100rpx;
+
+
+		.condition {
+			height: 100rpx;
+			line-height: 100rpx;
+			background: #f6fff9;
+			width: 100%;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			border-bottom: 2rpx solid #f6f6f6;
+
+
+			.search-part {
+				width: 30%;
+				margin: 0 2%;
+
+				.limit {
+
+					height: 70rpx;
+					line-height: 70rpx;
+					color: #303133;
+					width: 100%;
+					font-size: 30rpx;
+				}
+			}
+
+
+		}
+
+		.table-part {
+			padding: 30rpx;
+		}
+
+		.table-title {
+			margin: 20rpx 0;
+			display: flex;
+			align-items: center;
+
+			.line {
+				width: 12rpx;
+				height: 40rpx;
+				line-height: 40rpx;
+				border-radius: 10rpx;
+				background: #909399;
+				margin-right: 10rpx;
+			}
+
+			.txt {
+				font-size: 30rpx;
+				color: #666666;
+				height: 50rpx;
+				line-height: 50rpx;
+			}
+		}
+
+	}
+</style>

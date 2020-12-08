@@ -1,0 +1,29 @@
+/*每个页面公共css */
+ .u-calendar__action {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+          justify-content: center;
+}
+ .u-input {
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+          align-items: center;
+}
+.empty {
+  width: 100%;
+  text-align: center;
+  margin: 60rpx 0;
+}
+.empty image {
+  width: 180rpx;
+  height: 120rpx;
+}
+.empty .empty-tips {
+  color: #bfbfbf;
+  margin-top: 10rpx;
+  font-size: 28rpx;
+}
+

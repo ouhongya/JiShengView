@@ -1,0 +1,363 @@
+<template>
+	<view class="task">
+		<a-head bgColor='#4abdb4' :text="taskhead"></a-head>
+		<view class="contain">
+			<view class="content">
+				<view class="title">必填任务信息</view>
+				<u-cell-group>
+					<u-cell-item title="*任务名称" :title-style="titleStyle" arrow-direction="right" :value="taskname" @click="taskchange"></u-cell-item>
+					<u-cell-item title="*检查标准" :title-style="titleStyle" arrow-direction="right" :value="standard" @click="standardchange"></u-cell-item>
+				</u-cell-group>
+			</view>
+			<view class="content">
+				<view class="title">任务信息</view>
+				<u-cell-group>
+					<u-cell-item title="单位名称" :title-style="titleStyle" arrow-direction="right" :value="company" @click="companychange"></u-cell-item>
+					<u-cell-item title="子单位" :title-style="titleStyle" arrow-direction="right" :value="child" @click="childchange"></u-cell-item>
+					<u-cell-item title="任务期限" :title-style="titleStyle" arrow-direction="right" :value="date" @click="datechange"></u-cell-item>
+					<u-cell-item title="下发频次" :title-style="titleStyle" arrow-direction="right" :value="frequency" @click="frechange"></u-cell-item>
+					<u-cell-item title="检查地点" :title-style="titleStyle" arrow-direction="right" :value="city" @click="citychange"></u-cell-item>
+					<u-cell-item title="详细地址" :title-style="titleStyle" arrow-direction="right" :value="address" @click="addresschange"></u-cell-item>
+					<u-cell-item title="组长" :title-style="titleStyle" arrow-direction="right" :value="leader" @click="leadchange"></u-cell-item>
+				</u-cell-group>
+			</view>
+			<!-- 修改任务名称 -->
+			<u-modal v-model="showtask" title="任务名称" cancel-text="取消" confirm-text="确定" confirm-color="#1fac9c"
+			 :show-cancel-button="true" @confirm="taskconfirm">
+				<view class="slot-content">
+					<view class="model">
+						<u-input v-model="taskpart"  placeholder="请输入你的任务名称"  type="textarea"  :autoHeight="true" />
+					</view>
+				</view>
+			</u-modal>
+			<!-- 修改检查标准 -->
+			<u-select v-model="showstandard" mode="single-column" :list="selectstandard" @confirm="standardconfirm"
+			 confirm-color="#1fac9c"></u-select>
+			<!-- 修改单位名称-->
+			<u-select v-model="showcompany" mode="single-column" :list="selectcompany" @confirm="companyconfirm" confirm-color="#1fac9c"></u-select>
+			<!-- 修改子单位 -->
+			<u-select v-model="showchild" mode="single-column" :list="selectchild" @confirm="childconfirm" confirm-color="#1fac9c"></u-select>
+			<!-- 修改日期 -->
+			<u-calendar v-model="showdate" mode="range" @change="dateconfirm"></u-calendar>
+			<!-- 修改下发频次-->
+
+			<u-select v-model="showfre" mode="single-column" :list="selectfre" @confirm="freconfirm" confirm-color="#1fac9c"></u-select>
+			<!-- 修改地点 -->
+			<u-picker mode="region" v-model="showcity" :params="params1" confirm-color="#1fac9c" @confirm="cityconfirm"></u-picker>
+
+			<!-- 修改详细地址 -->
+			<u-modal v-model="showaddress" title="详细地址" cancel-text="取消" confirm-text="确定" confirm-color="#1fac9c"
+			 :show-cancel-button="true" @confirm="addressconfirm">
+				<view class="slot-content">
+					<view class="model">
+						<u-input v-model="addresspart"  placeholder="请输入详细地址" type="textarea" :auto-height="true" />
+					</view>
+				</view>
+			</u-modal>
+			<!-- 修改组长 -->
+			<u-select v-model="showlead" mode="single-column" :list="selectlead" @confirm="leadconfirm" confirm-color="#1fac9c"></u-select>
+		</view>
+		<view class="action">
+			<view class="bottom">
+				<view class="cancel" @click="cancel">取消</view>
+				<view class="save" @click="save">保存</view>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	export default {
+		name: 'attention',
+		data() {
+			return {
+				taskhead: '新建任务',
+				id: '',
+				taskname: '',
+				standard: '',
+				company: '',
+				child: '',
+				date: '',
+				frequency: '',
+				city: '',
+				address: '',
+				leader: '',
+				showtask: false,
+				showstandard: false,
+				showcompany: false,
+				showfre: false,
+				showdate: false,
+				showcity: false,
+				showaddress: false,
+				showlead: false,
+				showchild: false,
+				taskpart: '',
+				addresspart: '',
+				titleStyle: {
+					color: '#333333',
+					fontSize:'30rpx',
+				},
+				selectstandard: [
+
+					{
+						value: '1',
+						label: 'xxx标准1'
+					},
+					{
+						value: '2',
+						label: 'xxx标准2'
+					}
+				],
+				selectcompany: [{
+						value: '1',
+						label: 'xxx公司1'
+					},
+					{
+						value: '2',
+						label: 'xxx公司2'
+					}
+				],
+				selectchild: [
+
+					{
+						value: '1',
+						label: 'xxx子单位1'
+					},
+					{
+						value: '2',
+						label: 'xxx子单位2'
+					}
+				],
+				selectfre: [{
+						value: '1',
+						label: '每天一次'
+					},
+					{
+						value: '2',
+						label: '每周一次'
+					}
+				],
+				selectlead: [
+
+					{
+						value: '1',
+						label: '组长1'
+					},
+					{
+						value: '2',
+						label: '组长2'
+					}
+				],
+				params1: {
+					year: true,
+					month: true,
+					day: true
+				},
+				params1: {
+					province: true,
+					city: true,
+					area: true
+				}
+			};
+		},
+
+		onLoad(options) {
+			if (options.id) {
+				this.id = options.id;
+				this.taskhead = '编辑任务';
+			} else {
+				this.id = '';
+				this.taskhead = '新建任务';
+			}
+		},
+		methods: {
+
+			taskchange() {
+				this.showtask = true;
+			},
+			taskconfirm() {
+				this.taskname=this.taskpart;				
+				this.showtask = false;
+			},
+			standardchange() {
+				this.showstandard = true;
+			},
+			standardconfirm(e) {
+				this.standard = e[0].label;
+				this.showstandard = false;
+			},
+			companychange() {
+				this.showcompany = true;
+			},
+			companyconfirm(e) {
+				this.company = e[0].label;
+				this.showcompany = false;
+			},
+			childchange(){
+				this.showchild=true;
+			},
+			childconfirm(e){
+				
+				this.child = e[0].label;
+				this.showchild = false;
+			},
+			datechange(){
+				this.showdate=true;
+			},
+			dateconfirm(e){
+				
+				this.date=e.startDate+'-'+e.endDate;
+			},
+			frechange() {
+				
+				this.showfre = true;
+			},
+			freconfirm(e) {
+				this.frequency=e[0].label;
+				this.showfre = false;
+			},
+
+			citychange() {
+				this.showcity = true;
+			},
+			cityconfirm(e) {
+				this.city =e.province.label + '-' + e.city.label+ '-' +e.area.label;
+				this.showcity = true;
+			},
+			addresschange() {
+				this.showaddress = true;
+			},
+			addressconfirm() {
+				this.address=this.addresspart;
+				this.showaddress = false;
+			},
+			leadchange() {
+				this.showlead = true;
+			},
+			leadconfirm(e) {
+				this.leader=e[0].label
+				this.showlead = false;
+			},
+			cancel() {
+				uni.navigateBack({
+					delta: 1
+				})
+			},
+			save() {
+				uni.navigateBack({
+					delta: 1
+				})
+			}
+
+
+		}
+	};
+</script>
+
+<style lang="less" scoped>
+	/deep/.u-cell__value {
+		line-height: 48rpx;
+	}
+	.model{
+		padding: 30rpx;
+	}
+
+	.contain {
+		min-height: 100vh;
+		background-color: #fafafa;
+	}
+
+	.head {
+		display: flex;
+		justify-content: space-between;
+		height: 160rpx;
+		line-height: 160rpx;
+		padding: 0 30rpx;
+		background: #ffffff;
+		margin-bottom: 30rpx;
+
+		.title {
+			font-size: 36rpx;
+			font-family: PingFang SC;
+			font-weight: bold;
+			line-height: 160rpx;
+			color: #333333;
+			opacity: 1;
+			background: #ffffff;
+		}
+
+		.img {
+			display: flex;
+		}
+	}
+
+	image {
+		width: 120rpx;
+		height: 120rpx;
+		border-radius: 50%;
+		margin: 30rpx 10rpx;
+	}
+
+	.content {
+		background: #ffffff;
+		margin-bottom: 30rpx;
+
+		.title {
+			height: 90rpx;
+			font-size: 36rpx;
+			font-family: PingFang SC;
+			font-weight: bold;
+			line-height: 90rpx;
+			color: #333333;
+			opacity: 1;
+			padding: 0 30rpx;
+
+			text {
+				height: 33rpx;
+				font-size: 24rpx;
+				font-family: PingFang SC;
+				font-weight: 400;
+				line-height: 33rpx;
+				color: #999999;
+				opacity: 1;
+				margin-left: 30rpx;
+			}
+		}
+	}
+
+	.action {
+		position: fixed;
+		width: 100%;
+		background: #FFFFFF;
+		bottom: 0;
+		z-index: 99;
+
+		.bottom {
+			display: flex;
+			justify-content: space-around;
+			align-items: center;
+			height: 100rpx;
+			line-height: 100rpx;
+			text-align: center;
+			color: #FFFFFF;
+
+			.cancel {
+				width: 40%;
+				height: 80rpx;
+				line-height: 80rpx;
+				border-radius: 40rpx;
+				background: #cdcdcd;
+			}
+
+			.save {
+				width: 40%;
+				height: 80rpx;
+				line-height: 80rpx;
+				background: #1fac9c;
+				border-radius: 40rpx;
+
+			}
+		}
+
+	}
+</style>

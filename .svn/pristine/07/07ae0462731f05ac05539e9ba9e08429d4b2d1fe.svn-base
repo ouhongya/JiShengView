@@ -1,0 +1,1208 @@
+<template>
+	<view class="problem">
+		<u-sticky :offset-top="offset">
+
+			<scroll-view class="condition" scroll-x="true" @scroll="scroll" scroll-left="120">
+			
+				
+			
+				<view class="search-part">
+					<view class="limit">
+						<u-input v-model="fromlist.list1" type="select" :border="true" @click="openlist1()" height="70" />
+						<!--选择标准弹框 -->
+						<u-popup v-model="showlist1" mode="bottom" height="80%" @close="close1">
+							<view class="Model">
+								<view class="toptitle">
+									标准筛选
+								</view>
+								<view class="top-part">
+									<view class="all">
+										<u-checkbox-group @change="checkedAll">
+											<u-checkbox v-model="list1choose" active-color="#4abdb4">全部标准</u-checkbox>
+										</u-checkbox-group>
+									</view>
+									<view class="part">
+										<scroll-view scroll-y style="height:60vh;width: 100%;" @scrolltolower="onreachBottom1">
+											<u-checkbox-group @change="checkboxGroupChange" :wrap="true">
+												<u-checkbox @change="checkboxChange" v-model="item.checked" v-for="(item, index) in list1" :key="index"
+												 :name="item.name" active-color="#4abdb4">{{item.name}}</u-checkbox>
+											</u-checkbox-group>
+											<u-loadmore @loadmore="loadmore1" bg-color="none" :status="status" :icon-type="iconType" margin="30"
+											 :load-text="loadText" v-if="list1.length >=1" />
+										</scroll-view>
+									</view>
+								</view>
+							</view>
+						</u-popup>
+					</view>
+				</view>
+				<view class="search-part">
+					<view class="limit">
+						<u-input v-model="fromlist.list2" type="select" :border="true" @click="openlist2()" height="70" />
+						<!--选择人员弹框 -->
+						<u-popup v-model="showlist2" mode="bottom" height="80%" @close="close2">
+							<view class="Model">
+								<view class="toptitle">
+									任务筛选
+								</view>
+								<view class="top-part">
+									<view class="all">
+										<u-checkbox-group @change="checkedAll2">
+											<u-checkbox v-model="list2choose" active-color="#4abdb4">全部任务</u-checkbox>
+										</u-checkbox-group>
+									</view>
+									<view class="part">
+										<scroll-view scroll-y style="height:60vh;width: 100%;" @scrolltolower="onreachBottom2">
+											<u-checkbox-group @change="checkboxGroupChange2" :wrap="true">
+												<u-checkbox @change="checkboxChange2" v-model="item.checked" v-for="(item, index) in list2" :key="index"
+												 :name="item.name" active-color="#4abdb4">{{item.name}}</u-checkbox>
+											</u-checkbox-group>
+											<u-loadmore @loadmore="loadmore2" bg-color="none" :status="status" :icon-type="iconType" margin="30"
+											 :load-text="loadText" v-if="list2.length >=1" />
+										</scroll-view>
+									</view>
+								</view>
+							</view>
+						</u-popup>
+					</view>
+				</view>
+				<view class="search-part">
+					<view class="limit">
+						<u-input v-model="fromlist.list3" type="select" :border="true" @click="openlist3()" height="70" />
+						<!--选择状态弹框 -->
+						<u-popup v-model="showlist3" mode="bottom" height="80%" @close="close3">
+							<view class="Model">
+								<view class="toptitle">
+									状态筛选
+								</view>
+								<view class="top-part">
+									<view class="all">
+										<u-checkbox-group @change="checkedAll3">
+											<u-checkbox v-model="list3choose" active-color="#4abdb4">全部状态</u-checkbox>
+										</u-checkbox-group>
+									</view>
+									<view class="part">
+										<scroll-view scroll-y style="height:60vh;width: 100%;" @scrolltolower="onreachBottom3">
+											<u-checkbox-group @change="checkboxGroupChange3" :wrap="true">
+												<u-checkbox @change="checkboxChange3" v-model="item.checked" v-for="(item, index) in list3" :key="index"
+												 :name="item.name" active-color="#4abdb4">{{item.name}}</u-checkbox>
+											</u-checkbox-group>
+											<u-loadmore @loadmore="loadmore3" bg-color="none" :status="status" :icon-type="iconType" margin="30"
+											 :load-text="loadText" v-if="list3.length >=1" />
+										</scroll-view>
+									</view>
+								</view>
+							</view>
+						</u-popup>
+					</view>
+				</view>
+
+				<view class="search-part">
+					<view class="limit">
+						<u-input v-model="fromlist.list4" type="select" :border="true" @click="openlist4()" height="70" />
+						<!--选择时间弹框 -->
+						<u-calendar v-model="showlist4" mode="range" @change="dateconfirm"></u-calendar>
+					</view>
+				</view>
+
+				<view class="search-part">
+					<view class="limit">
+						<u-input v-model="fromlist.list5" type="select" :border="true" @click="openlist5()" height="70" />
+						<!--选择人员弹框 -->
+						<u-popup v-model="showlist5" mode="bottom" height="80%" @close="close5">
+							<view class="Model">
+								<view class="toptitle">
+									人员筛选
+								</view>
+								<view class="top-part">
+									<view class="all">
+										<u-checkbox-group @change="checkedAll5">
+											<u-checkbox v-model="list5choose" active-color="#4abdb4">全部人员</u-checkbox>
+										</u-checkbox-group>
+									</view>
+									<view class="part">
+										<scroll-view scroll-y style="height:60vh;width: 100%;" @scrolltolower="onreachBottom5">
+											<u-checkbox-group @change="checkboxGroupChange5" :wrap="true">
+												<u-checkbox @change="checkboxChange5" v-model="item.checked" v-for="(item, index) in list5" :key="index"
+												 :name="item.name" active-color="#4abdb4">{{item.name}}</u-checkbox>
+											</u-checkbox-group>
+											<u-loadmore @loadmore="loadmore5" bg-color="none" :status="status" :icon-type="iconType" margin="30"
+											 :load-text="loadText" v-if="list5.length >=1" />
+										</scroll-view>
+									</view>
+								</view>
+							</view>
+						</u-popup>
+					</view>
+				</view>
+
+			</scroll-view>
+
+		</u-sticky>
+		<view class="problemList">
+			<view class="collapsePart">
+				<scroll-view scroll-y style="height:60vh;width: 100%;" @scrolltolower="onreachBottom">
+					<view class="u-collapse-item" v-for="(item,index) in collapseList">
+						<view :hover-stay-time="200" class="u-collapse-head">
+							<block>
+								<view class="problemTitle">
+									<view class="left">
+										<view class="line"></view>
+										<view class="left-part" @tap="headClick(index)">
+											<view class="name">
+												<view class="nameleft">
+													<view class="nametitle">
+														xxxxx问题整改
+													</view>
+													<u-badge type="error" count="1" class="badge-msg"></u-badge>
+												</view>
+												<view class="state">
+													整改中
+												</view>
+											</view>
+											<view class="detail">
+												主站 调度数据网 其他
+											</view>
+										</view>
+									</view>
+									<view class="right">
+										<image src="../../static/out.png" mode=""></image>
+									</view>
+								</view>
+							</block>
+						</view>
+						<view class="u-collapse-body" :style="[{
+								height: item.isShow ? mainheight + 'px' : '0'
+							}]" v-if="item.isShow">
+							<view class="u-collapse-content" :id="elId" >
+								<view class="scorll-content">
+									<scroll-view class="scroll-view_H" scroll-x="true" @scroll="scroll" scroll-left="120">
+										<view class="top">
+											<view class="scorll-th">
+												<view class="srorll-title">
+													项目序号
+												</view>
+											</view>
+											<view class="scorll-th">
+												<view class="srorll-title">
+													状态
+												</view>
+											</view>
+											<view class="scorll-th detail">
+												<view class="srorll-title">
+													检查单位
+												</view>
+											</view>
+											<view class="scorll-th detail">
+												<view class="srorll-title">
+													评判项目
+												</view>
+											</view>
+											<view class="scorll-th">
+												<view class="srorll-title">
+													标准
+												</view>
+											</view>
+											<view class="scorll-th">
+												<view class="srorll-title">
+													整改人员
+												</view>
+											</view>
+											<view class="scorll-th detail">
+												<view class="srorll-title">
+													问题信息
+												</view>
+											</view>
+											<view class="scorll-th">
+												<view class="srorll-title">
+													扣分
+												</view>
+											</view>
+											<view class="scorll-th pic">
+												<view class="srorll-title">
+													问题图片
+												</view>
+											</view>
+											<view class="scorll-th detail">
+												<view class="srorll-title">
+													问题备注
+												</view>
+											</view>
+											<view class="scorll-th detail">
+												<view class="srorll-title">
+													整改措施
+												</view>
+											</view>
+											<view class="scorll-th pic">
+												<view class="srorll-title">
+													整改图片
+												</view>
+											</view>
+											<view class="scorll-th detail">
+												<view class="srorll-title">
+													整改备注
+												</view>
+											</view>
+											<view class="scorll-th">
+												<view class="srorll-title">
+													整改时间
+												</view>
+											</view>
+										</view>
+										<view v-for="(i,index1) in item.tableList">
+											<view class="scorll-th">
+												<view class="scorll-td">
+													<view class="content">
+														111
+													</view>
+												</view>
+											</view>
+											<view class="scorll-th">
+												<view class="scorll-td">
+													<view class="content">
+														待审核
+													</view>
+												</view>
+											</view>
+											<view class="scorll-th detail">
+												<view class="scorll-td detail">
+													<view class="content">
+														xxxx单位
+													</view>
+												</view>
+											</view>
+											<view class="scorll-th detail">
+												<view class="scorll-td">
+													<view class="content">
+														xxxx项目
+													</view>
+												</view>
+											</view>
+											<view class="scorll-th">
+												<view class="scorll-td">
+													<view class="content">
+														xxxx标准
+													</view>
+												</view>
+											</view>
+											<view class="scorll-th">
+												<view class="scorll-td">
+													<view class="content">
+														张三
+													</view>
+												</view>
+											</view>
+											<view class="scorll-th detail">
+												<view class="scorll-td">
+													<view class="content">
+														问题信息问题信息问题信息问题信息问题信息问题信息问题信息问题信息问题信息问题信息
+													</view>
+												</view>
+											</view>
+											<view class="scorll-th">
+												<view class="scorll-td">
+													<view class="content">
+														-2
+													</view>
+												</view>
+											</view>
+											<view class="scorll-th pic">
+												<view class="scorll-td">
+													<view class="content">
+														<view class="tips" @click="managePic1(index,index1,i.list1)" v-if="i.showPic1">管理图片</view>
+														<view class="tips" @click="finishPic1(index,index1,i.fileList1)" v-else>管理完成</view>
+														<view class="imgpart" v-if="i.showPic1">
+															<u-swiper :list="i.list1" @click="previewImage(i.list1)"></u-swiper>
+														</view>
+														<view class="upload" v-else>
+															<u-upload :action="action" :file-list="i.fileList1" @on-remove="onRemove" :show-progress="false"
+															 :show-upload-list='false'></u-upload>
+														</view>
+													</view>
+												</view>
+											</view>
+											<view class="scorll-th detail">
+												<view class="scorll-td">
+													<view class="content">
+														问题备注
+													</view>
+												</view>
+											</view>
+											<view class="scorll-th detail">
+
+												<view class="scorll-td">
+													<view class="content">
+														整改措施
+													</view>
+												</view>
+											</view>
+											<view class="scorll-th pic">
+												<view class="scorll-td">
+													<view class="content">
+														<view class="tips" @click="managePic(index,index1,i.list)" v-if="i.showPic">管理图片</view>
+														<view class="tips" @click="finishPic(index,index1,i.fileList)" v-else>管理完成</view>
+														<view class="imgpart" v-if="i.showPic">
+															<u-swiper :list="i.list" @click="previewImage(i.list)"></u-swiper>
+														</view>
+														<view class="upload" v-else>
+															<u-upload :action="action" :file-list="i.fileList" @on-remove="onRemove" :show-progress="false"
+															 :show-upload-list='false'></u-upload>
+														</view>
+													</view>
+												</view>
+											</view>
+											<view class="scorll-th detail">
+												<view class="scorll-td">
+													<view class="content">
+														整改备注整改备注整改备注整改备注整改备注整改备注整改备注整改备注
+													</view>
+												</view>
+											</view>
+											<view class="scorll-th">
+												<view class="scorll-td">
+													<view class="content">
+														{{$u.timeFormat('1581170184', 'yyyy-mm-dd hh:MM:ss')}}
+													</view>
+												</view>
+											</view>
+										</view>
+									</scroll-view>
+								</view>
+							</view>
+						</view>
+					</view>
+					<!-- 分页加载 -->
+					<u-loadmore bg-color="none" :status="status" :icon-type="iconType" margin-bottom="60" :load-text="loadText"
+					 @loadmore="loadmore" />
+
+				</scroll-view>
+
+			</view>
+		</view>
+	</view>
+
+</template>
+
+<script>
+	export default {
+		props: {
+			offset: {
+				type: Number,
+				default: 0
+			},
+		},
+		data() {
+			return {
+				headTitle: '问题明细',
+				mainheight: 0,
+				clickindex:'',
+				elId: this.$u.guid(),
+				//搜索部分
+				list1: [{
+						checked: false,
+						name: 'xxx标准1'
+					},
+					{
+						checked: false,
+						name: 'xxx标准2'
+					},
+					{
+						checked: false,
+						name: 'xxx标准3'
+					}
+				],
+				showlist1: false,
+				list1choose: true,
+				list2: [{
+						checked: false,
+						name: 'xxxx任务1'
+					},
+					{
+						checked: false,
+						name: 'xxx任务2'
+					},
+					{
+						checked: false,
+						name: 'xxx任务3'
+					},
+
+				],
+				showlist2: false,
+				list2choose: true,
+				list3: [{
+						checked: false,
+						name: 'xxx状态1'
+					},
+					{
+						checked: false,
+						name: 'xxx状态2'
+					},
+					{
+						checked: false,
+						name: 'xxx状态3'
+					}
+				],
+				showlist3: false,
+				list3choose: true,
+				showlist4: false,
+				showlist5: false,
+				list5choose: true,
+				list5: [{
+						checked: false,
+						name: 'xxxx人员1'
+					},
+					{
+						checked: false,
+						name: 'xxx人员2'
+					},
+					{
+						checked: false,
+						name: 'xxx人员3'
+					},
+
+				],
+				fromlist: {
+					list1: '全部标准',
+					list2: '全部任务',
+					list3: '全部状态',
+					list4: '全部时间',
+					list5: '全部人员'
+				},
+				collapseList: [
+					{
+					isShow: false,
+					tableList: [{
+						//问题图片
+						showPic1: true,
+						list1: [{
+							image: 'https://cdn.uviewui.com/uview/swiper/1.jpg',
+
+						}],
+						fileList1: [],
+						//整改图片
+						showPic: true,
+						list: [{
+								image: 'https://cdn.uviewui.com/uview/swiper/1.jpg',
+
+							},
+							{
+								image: 'https://cdn.uviewui.com/uview/swiper/2.jpg',
+
+							},
+							{
+								image: 'https://cdn.uviewui.com/uview/swiper/3.jpg',
+							}
+						],
+						fileList: []
+					}]
+				},
+				{
+					isShow: false,
+					tableList: [{
+						//问题图片
+						showPic1: true,
+						list1: [{
+							image: 'https://cdn.uviewui.com/uview/swiper/1.jpg',
+				
+						}],
+						fileList1: [],
+						//整改图片
+						showPic: true,
+						list: [{
+								image: 'https://cdn.uviewui.com/uview/swiper/1.jpg',
+				
+							},
+							{
+								image: 'https://cdn.uviewui.com/uview/swiper/2.jpg',
+				
+							},
+							{
+								image: 'https://cdn.uviewui.com/uview/swiper/3.jpg',
+							}
+						],
+						fileList: []
+					}]
+				},
+				],
+
+				//上传图片
+				action: 'http://192.168.1.204:8888/api/v1/uploadImage',
+				// 分页
+				status: 'loadmore', // 下拉加载状态
+				iconType: 'flower',
+				loadText: {
+					loadmore: '点击或上拉加载更多',
+					loading: '正在加载...',
+					nomore: '我也是有底线的'
+				},
+				pages: 1, //实际页数
+				pageNum: 1, //当前下拉加载页数
+				pageSize: 10, //每页的条数
+
+			}
+		},
+		onLoad(options) {
+			if (options) {
+				this.headTitle = options.title + '问题明细';
+			} else {
+				this.headTitle = '问题明细';
+			}
+
+		},
+		methods: {
+			//搜索部分
+			//选择标准
+			checkboxChange(e) {},
+			// 选中任一checkbox时，由checkbox-group触发
+			checkboxGroupChange(e) {
+				this.fromlist.list1 = '';
+				e.map(val => {
+					this.fromlist.list1 += val + ',';
+				})
+				if (e.length == this.list1.length) {
+					this.list1choose = true;
+				} else {
+					this.list1choose = false;
+				}
+			},
+			// 全选
+			checkedAll() {
+				if (this.list1choose == true) {
+					this.list1.map(val => {
+						val.checked = true;
+						this.fromlist.list1 = '全部标准';
+					})
+				} else {
+					this.list1.map(val => {
+						val.checked = false;
+					})
+				}
+
+			},
+
+			openlist1() {
+				this.showlist1 = true;
+				this.pageNum = 1;
+				this.pages = 1;
+				this.status = 'loadmore';
+				this.getlist1();
+
+			},
+			getlist1() {
+				this.status = 'loading';
+				const recordsList = this.list1; //模拟请求到的数据
+				if (this.pageNum > 1) {
+					this.list1 = this.list1.concat(recordsList);
+				} else {
+					this.list1 = recordsList;
+					this.status = 'nomore';
+				}
+				uni.stopPullDownRefresh();
+				this.pages = 3; //模拟页数最大等于3
+				this.pageNum++;
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+				}
+				if (this.fromlist.list1 == '全部标准') {
+					this.fromlist.list1 = '全部标准';
+					this.list1.map(val => {
+						val.checked = true;
+					})
+					this.list1choose = true;
+				} else {
+					let s = this.fromlist.list1.split(",");
+					s.map(item => {
+						this.list1.map(val => {
+							if (val.name == item) {
+								val.checked = true;
+							}
+						})
+					})
+					this.list1choose = false;
+				}
+			},
+			// 上拉加载
+			onreachBottom1(e) {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				this.getlist1();
+			},
+			loadmore1() {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				this.getlist1();
+			},
+			close1() {
+				//这里关闭弹窗后请求页面数据
+				console.log('111')
+			},
+			//选择任务
+			checkboxChange2(e) {},
+			checkboxGroupChange2(e) {
+				this.fromlist.list2 = '';
+				e.map(val => {
+					this.fromlist.list2 += val + ',';
+				})
+				if (e.length == this.list1.length) {
+					this.list2choose = true;
+				} else {
+					this.list2choose = false;
+				}
+			},
+			// 全选
+			checkedAll2() {
+				if (this.list2choose == true) {
+					this.list2.map(val => {
+						val.checked = true;
+						this.fromlist.list2 = '全部任务';
+					})
+				} else {
+					this.list1.map(val => {
+						val.checked = false;
+					})
+				}
+
+			},
+			openlist2() {
+				this.showlist2 = true;
+				this.pageNum = 1;
+				this.pages = 1;
+				this.status = 'loadmore';
+				this.getlist2();
+
+			},
+			getlist2() {
+				this.status = 'loading';
+				const recordsList = this.list2; //模拟请求到的数据
+				if (this.pageNum > 1) {
+					this.list2 = this.list2.concat(recordsList);
+				} else {
+					this.list2 = recordsList;
+					this.status = 'nomore';
+				}
+				uni.stopPullDownRefresh();
+				this.pages = 3; //模拟页数最大等于3
+				this.pageNum++;
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+				}
+				if (this.fromlist.list2 == '全部任务') {
+					this.fromlist.list2 = '全部任务';
+					this.list2.map(val => {
+						val.checked = true;
+					})
+					this.list2choose = true;
+				} else {
+					let s = this.fromlist.list2.split(",");
+					s.map(item => {
+						this.list2.map(val => {
+							if (val.name == item) {
+								val.checked = true;
+							}
+						})
+					})
+					this.list2choose = false;
+				}
+			},
+			// 上拉加载
+			onreachBottom2(e) {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				this.getlist2();
+			},
+			loadmore2() {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				this.getlist2();
+			},
+			close2() {
+				//这里关闭弹窗后请求页面数据
+				console.log('222')
+			},
+			//选择状态
+			checkboxChange3(e) {},
+			checkboxGroupChange3(e) {
+				this.fromlist.list3 = '';
+				e.map(val => {
+					this.fromlist.list3 += val + ',';
+				})
+				if (e.length == this.list3.length) {
+					this.list3choose = true;
+				} else {
+					this.list3choose = false;
+				}
+			},
+			// 全选
+			checkedAll3() {
+				if (this.list3choose == true) {
+					this.list3.map(val => {
+						val.checked = true;
+						this.fromlist.list3 = '全部状态';
+					})
+				} else {
+					this.list3.map(val => {
+						val.checked = false;
+					})
+				}
+
+			},
+			openlist3() {
+				this.showlist3 = true;
+				this.pageNum = 1;
+				this.pages = 1;
+				this.status = 'loadmore';
+				this.getlist3();
+
+			},
+			getlist3() {
+				this.status = 'loading';
+				const recordsList = this.list3; //模拟请求到的数据
+				if (this.pageNum > 1) {
+					this.list3 = this.list3.concat(recordsList);
+				} else {
+					this.list3 = recordsList;
+					this.status = 'nomore';
+				}
+				uni.stopPullDownRefresh();
+				this.pages = 3; //模拟页数最大等于3
+				this.pageNum++;
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+				}
+				if (this.fromlist.list3 == '全部状态') {
+					this.fromlist.list3 = '全部状态';
+					this.list3.map(val => {
+						val.checked = true;
+					})
+					this.list3choose = true;
+				} else {
+					let s = this.fromlist.list3.split(",");
+					s.map(item => {
+						this.list3.map(val => {
+							if (val.name == item) {
+								val.checked = true;
+							}
+						})
+					})
+					this.list3choose = false;
+				}
+			},
+			// 上拉加载
+			onreachBottom3(e) {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				this.getlist3();
+			},
+			loadmore3() {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				this.getlist3();
+			},
+			close3() {
+				//这里关闭弹窗后请求页面数据
+				console.log('333')
+			},
+			//选择时间
+			openlist4() {
+				this.showlist4 = true;
+			},
+			dateconfirm(e) {
+				this.fromlist.list4 = e.startDate + '至' + e.endDate;
+			},
+			//选择人员
+			checkboxChange5(e) {},
+			checkboxGroupChange5(e) {
+				this.fromlist.list5 = '';
+				e.map(val => {
+					this.fromlist.list5 += val + ',';
+				})
+				if (e.length == this.list5.length) {
+					this.list5choose = true;
+				} else {
+					this.list5choose = false;
+				}
+			},
+			// 全选
+			checkedAll5() {
+				if (this.list5choose == true) {
+					this.list5.map(val => {
+						val.checked = true;
+						this.fromlist.list5 = '全部人员';
+					})
+				} else {
+					this.list5.map(val => {
+						val.checked = false;
+					})
+				}
+
+			},
+			openlist5() {
+				this.showlist5 = true;
+				this.pageNum = 1;
+				this.pages = 1;
+				this.status = 'loadmore';
+				this.getlist5();
+
+			},
+			getlist5() {
+				this.status = 'loading';
+				const recordsList = this.list5; //模拟请求到的数据
+				if (this.pageNum > 1) {
+					this.list5 = this.list5.concat(recordsList);
+				} else {
+					this.list5 = recordsList;
+					this.status = 'nomore';
+				}
+				uni.stopPullDownRefresh();
+				this.pages = 3; //模拟页数最大等于3
+				this.pageNum++;
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+				}
+				if (this.fromlist.list5 == '全部人员') {
+					this.fromlist.list5 = '全部人员';
+					this.list5.map(val => {
+						val.checked = true;
+					})
+					this.list2choose = true;
+				} else {
+					let s = this.fromlist.list5.split(",");
+					s.map(item => {
+						this.list5.map(val => {
+							if (val.name == item) {
+								val.checked = true;
+							}
+						})
+					})
+					this.list5choose = false;
+				}
+			},
+			// 上拉加载
+			onreachBottom5(e) {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				this.getlist5();
+			},
+			loadmore5() {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				this.getlist5();
+			},
+			close5() {
+				//这里关闭弹窗后请求页面数据
+				console.log('555')
+			},
+
+			scroll(e) {
+
+			},
+
+			//问题管理图片
+			managePic1(index, index1, list) {
+				this.collapseList[index].tableList[index1].showPic1 = false;
+				// this.collapseList[index].tableList[index1].fileList1=list;
+			},
+			//问题管理完成
+			finishPic1(index, index1, fileList) {
+
+				this.collapseList[index].tableList[index1].showPic1 = true;
+				// this.collapseList[index].tableList[index1].list1=fileList;
+			},
+			//整改管理图片
+			managePic(index, index1, list) {
+				this.collapseList[index].tableList[index1].showPic = false;
+				// this.collapseList[index].tableList[index1].fileList=list;
+			},
+			//整改管理完成
+			finishPic(index, index1, fileList) {
+				this.collapseList[index].tableList[index1].showPic = true;
+				// this.collapseList[index].tableList[index1].list=fileList;
+			},
+			//移除图片
+			onRemove(index, lists) {
+				console.log(index, 'index')
+				console.log(lists, 'lists')
+				console.log('图片已被移除')
+			},
+			//预览图片
+			previewImage(fileList) {
+				let list = [];
+				fileList.map(i => {
+					list.push(i.image)
+				})
+				let current = list[0];
+				uni.previewImage({
+					current: current, // 当前显示图片的http链接  
+					urls: list // 需要预览的图片http链接列表  
+				})
+			},
+			// 上拉加载
+			onreachBottom(e) {
+				if (this.pageNum >= this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+			},
+			loadmore() {
+				if (this.pageNum >= this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+			},
+			//获取collapse内容高度
+			getHeight() {
+				this.collapseList[this.clickindex].mainheight = '0';
+				this.$nextTick(() => {
+					this.$uGetRect('#' + this.elId).then(res => {
+						this.mainheight = res.height;
+					})
+				});
+			},
+			
+			// 点击collapsehead头部
+			headClick(index) {
+				this.clickindex = index;
+				this.collapseList[index].isShow = !this.collapseList[index].isShow;
+				this.collapseList.map((e, index) => {
+					if (index != this.clickindex) {
+						e.isShow = false;
+					}
+				})
+				this.getHeight();
+				this.$forceUpdate();
+			},
+		},
+	}
+</script>
+
+<style lang="less" scoped>
+	.condition{
+		white-space: nowrap;
+		width: 100%;
+		height: 100rpx;
+		line-height: 100rpx;
+		padding: 10rpx 0;
+		box-shadow: 0 10rpx 10rpx rgba(0,0,0,0.15);
+		z-index: 99;
+		background: #FFFFFF;
+		.search-part {
+			width: 30%;
+			margin: 0 2%;
+			display: inline-block;
+			.limit {
+		
+				height: 70rpx;
+				line-height: 70rpx;
+				color: #303133;
+				width: 100%;
+				font-size: 30rpx;
+			}
+		}
+	}
+	
+
+	// 筛选弹窗
+	.Model {
+
+		.toptitle {
+			height: 90rpx;
+			line-height: 90rpx;
+			background: #4abdb4;
+			color: #FFFFFF;
+			font-size: 34rpx;
+			text-align: center;
+			position: fixed;
+			top: 0rpx;
+			width: 100%;
+			z-index: 999;
+		}
+
+		.all {
+			margin-top: 100rpx;
+			padding: 0 30rpx;
+		}
+
+		.part {
+			margin-left: 50rpx;
+			padding: 0 30rpx;
+		}
+	}
+	.problemList{
+		margin-bottom: 20rpx;
+		.u-collapse-item{
+			border-bottom: 2rpx solid #f6f6f6;
+		}		
+	}	
+	.problemTitle {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 20rpx 30rpx;
+
+		.left {
+			display: flex;
+			justify-content: flex-start;
+			align-items: center;
+			width: 80%;
+			position: relative;
+
+			.line {
+				width: 20rpx;
+				height: 100rpx;
+				background: #4abdb4;
+				border-radius: 10rpx;
+			}
+
+			.left-part {
+				margin-left: 10rpx;
+				width: 100%;
+
+
+				.name {
+					color: #333333;
+					font-size: 32rpx;
+					margin-bottom: 10rpx;
+					display: flex;
+					justify-content: space-between;
+					width: 100%;
+
+					.badge-msg {
+						top: 0 !important;
+					}
+
+					.nameleft {
+						display: flex;
+						justify-content: flex-start;
+						align-items: center;
+						position: relative;
+						width: 75%;
+
+						.nametitle {
+							width: 80%;
+							overflow: hidden;
+							text-overflow: ellipsis;
+							white-space: nowrap;
+							margin-right: 10rpx;
+
+						}
+					}
+
+					.state {
+						color: #FFFFFF;
+						background: #71d5a1;
+						text-align: center;
+						border-radius: 30rpx;
+						line-height: 50rpx;
+						height: 50rpx;
+						font-size: 24rpx;
+						padding: 0 10rpx;
+					}
+				}
+
+				.detail {
+					width: 100%;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					white-space: nowrap;
+					color: #606266;
+					font-size: 30rpx;
+				}
+			}
+		}
+
+		.right {
+			image {
+				width: 80rpx;
+				height: 80rpx;
+			}
+		}
+	}
+
+	.scorll-content {
+		padding: 0 0 30rpx 30rpx;
+
+		.scroll-view_H {
+			white-space: nowrap;
+			width: 100%;
+
+			.scorll-th {
+				display: inline-block;
+				width: 20%;
+
+
+				.srorll-title {
+					height: 60rpx;
+					line-height: 60rpx;
+					text-align: center;
+					font-size: 28rpx;
+					border: 1px solid #f6f6f6;
+					background: #6ecac3;
+					color: #FFFFFF;
+					padding: 10rpx 0;
+				}
+
+				.scorll-td {
+					width: 100%;
+					border: 1px solid #f6f6f6;
+					font-size: 28rpx;
+					color: #606266;
+					height: 200rpx;
+					white-space: normal;
+					overflow-y: auto;
+
+					.content {
+						padding: 10rpx 20rpx;
+						line-height: 40rpx;
+						white-space: normal;
+
+						.tips {
+							margin-bottom: 10rpx;
+							font-size: 24rpx;
+							color: #FFFFFF;
+							background: #ccebe9;
+							height: 60rpx;
+							line-height: 60rpx;
+							border-radius: 0 0 10rpx 10rpx;
+							text-align: center;
+							padding: 0 10rpx;
+						}
+					}
+				}
+			}
+
+			.detail {
+				width: 30%;
+			}
+
+			.pic {
+				width: 300rpx;
+
+				/deep/uni-swiper {
+					height: 70px !important;
+				}
+			}
+
+
+
+
+
+
+		}
+	}
+</style>

@@ -1,0 +1,646 @@
+<template>
+	<view class="recycle">
+		<a-head bgColor='#4abdb4' text="回收站"></a-head>
+		<u-sticky :offset-top="0">
+			<view class="task-state">
+				<!-- 搜索 -->
+				<view class="subtop">
+					<view class="subsearch">
+						<u-input v-model="time" type="text" :border="true" :disabled="true" @click="opentime" placeholder="点击选择时间" />
+					</view>
+					<view class="subnew">
+						<view class="new" @click="search()">
+							搜索
+						</view>
+						<view class="reset" @click="reset()">
+							重置
+						</view>
+					</view>
+				</view>
+			</view>
+		</u-sticky>
+		<view class="checktask-content">
+			<view class="empty" v-if="list.length <= 0">
+				<image src="../../static/nodata.png" mode=""></image>
+				<view class="empty-tips">
+					暂无数据
+				</view>
+			</view>
+			<scroll-view scroll-y style="height:90vh;width: 100%;" @scrolltolower="onreachBottom">
+				<u-swipe-action v-for="(item,index) in list" :key="index" @open="open" :index="index" :options="options" @click="click"
+				 :show="item.show" class="swipe" btn-width="120" @close="close">
+					<view class="day" :class="item.day==1?'red':'normal'">
+						{{item.day}}天后过期
+					</view>
+					<view class="part">
+
+						<view class="top-part">
+
+							<view class="left">
+								<view class="name">
+									{{item.name}}
+									<u-badge type="error" :count="item.count" class="badge-msg"></u-badge>
+								</view>
+								<view class="detail">
+									<view class="title">
+										检查准则：
+									</view>
+									<view class="size">
+										{{item.standard}}
+
+									</view>
+								</view>
+								<view class="detail">
+									<view class="title" v-if="item.type==1">
+										整改期限：
+									</view>
+									<view class="title" v-else>
+										计划时间：
+									</view>
+									<view class="time">
+										{{$u.timeFormat(item.startdate, 'yyyy-mm-dd')}}
+										<text>至</text>
+										{{$u.timeFormat(item.enddate, 'yyyy-mm-dd')}}
+									</view>
+								</view>
+							</view>
+							<view class="right">
+								<view class="arrow" v-if="item.arrowflag">
+
+									<u-icon name="arrow-right-double" color="#999999" size="32"></u-icon>
+
+								</view>
+
+								<view class="arrow" v-else>
+
+									<u-icon name="arrow-left-double" color="#999999" size="32"></u-icon>
+								</view>
+
+							</view>
+						</view>
+
+						<view class="action-part">
+							<view class="left">
+								<view class="company-part">
+									<image src="../../static/company.png" mode=""></image>
+									<view class="company">
+										{{item.company}}
+									</view>
+								</view>
+								<view class="prograss">
+									<u-line-progress :striped="true" :percent="item.prograss" :striped-active="true"></u-line-progress>
+								</view>
+							</view>
+							<view class="right">
+								<!--  #ECECEC未开始，#2979ff进行中,#19be6b已完成, #fa3534已延期,#ff9900延期已完成-->
+								<view class="state gray" v-if="item.status==0">
+									未开始
+								</view>
+								<view class="state blue" v-if="item.status==1">
+									进行中
+								</view>
+								<view class="state green" v-if="item.status==2">
+									已完成
+								</view>
+								<view class="state red" v-if="item.status==3">
+									已延期
+								</view>
+								<view class="state yellow" v-if="item.status==4">
+									延期已完成
+								</view>
+							</view>
+						</view>
+					</view>
+				</u-swipe-action>
+				<u-loadmore @loadmore="loadmore" bg-color="none" :status="status" :icon-type="iconType" margin="30" :load-text="loadText"
+				 v-if="list.length >=1" />
+			</scroll-view>
+		</view>
+		<!-- 删除弹框 -->
+		<u-modal v-model="delshow" @confirm="delconfirm" :async-close="true" :show-cancel-button="true" :confirm-style="{'color':'#fa3534'}"
+		 :show-title="false" content="您确认要删除吗？">
+		</u-modal>
+		<u-calendar v-model="showtime" mode="range" @change="changetime"></u-calendar>
+		<u-toast ref="uToast" />
+	</view>
+</template>
+
+<script>
+	export default {
+		data() {
+			return {
+				time: '',
+				showtime: false,
+				options: [{
+						text: '恢复',
+						style: {
+							backgroundColor: '#19be6b'
+						}
+					},
+					{
+						text: '删除',
+						style: {
+							backgroundColor: '#fa3534'
+						}
+					}
+				],
+				list: [{
+						id: '11',
+						type: 0,
+						name: 'xxxxx任务',
+						standard: '电网安全检查',
+						startdate: '1581170184',
+						enddate: '1581170184',
+						company: 'xxx公司',
+						prograss: 70,
+						status: '0',
+						count: '22',
+						show: false,
+						arrowflag: false,
+						day: 1
+					},
+					{
+						id: '22',
+						type: 99,
+						name: '2020-12-30xxx公司问题',
+						standard: '电网安全检查',
+						startdate: '1581170184',
+						enddate: '1581170184',
+						company: 'xxx公司',
+						prograss: 100,
+						status: '1',
+						count: '0',
+						show: false,
+						arrowflag: false,
+						day: 1
+					},
+					{
+						id: '33',
+						type: 0,
+						name: 'xxxxx任务',
+						standard: '电网安全检查',
+						startdate: '1581170184',
+						enddate: '1581170184',
+						company: 'xxx公司',
+						prograss: 0,
+						status: '2',
+						count: '45',
+						show: false,
+						arrowflag: false,
+						day: 11
+					},
+					{
+						id: '44',
+						type: 0,
+						name: 'xxxxx任务',
+						standard: '电网安全检查',
+						startdate: '1581170184',
+						enddate: '1581170184',
+						company: 'xxx公司',
+						prograss: 100,
+						status: '3',
+						count: '9',
+						show: false,
+						arrowflag: false,
+						day: 2
+					},
+					{
+						id: '55',
+						type: 0,
+						name: 'xxxxx任务',
+						standard: '电网安全检查',
+						startdate: '1581170184',
+						enddate: '1581170184',
+						company: 'xxx公司',
+						prograss: 40,
+						status: '4',
+						count: '22',
+						show: false,
+						arrowflag: false,
+						day: 1
+
+					},
+					{
+						id: '66',
+						type: 0,
+						name: 'xxxxx任务',
+						standard: '电网安全检查',
+						startdate: '1581170184',
+						enddate: '1581170184',
+						company: 'xxx公司',
+						prograss: 99,
+						status: '1',
+						count: '22',
+						show: false,
+						arrowflag: false,
+						day: 99
+					},
+				],
+				//删除
+				delshow: false,
+				delindex: '',
+				//恢复
+				recovershow: false,
+				recoverindex: '',
+				// 分页
+				status: 'loadmore', // 下拉加载状态
+				iconType: 'flower',
+				loadText: {
+					loadmore: '点击或上拉加载更多',
+					loading: '正在加载...',
+					nomore: '我也是有底线的'
+				},
+				pages: 1, //实际页数
+				pageNum: 1, //当前下拉加载页数
+				pageSize: 10, //每页的条数
+			}
+		},
+		methods: {
+			opentime() {
+				this.showtime = true;
+			},
+			changetime(e) {
+				console.log(e,'eeee')
+				this.time = e.startDate + '-' + e.endDate;
+			},
+			search() {
+				console.log(this.time, 'this.time')
+				if (this.time == '') {
+					this.$refs.uToast.show({
+						title: '请点击选择时间',
+						type: 'warning'
+					})
+				}
+
+			},
+			reset() {
+				this.time = '';
+			},
+			getlist() {
+				this.status = 'loading';
+				const recordsList = this.list; //模拟请求到的数据
+				if (this.pageNum > 1) {
+					this.list = this.list.concat(recordsList);
+				} else {
+					this.list = recordsList;
+					this.status = 'nomore';
+				}
+				uni.stopPullDownRefresh();
+				this.pages = 3; //模拟页数最大等于3
+				this.pageNum++;
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+				}
+
+			},
+			// 上拉加载
+			onreachBottom(e) {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				// this.getlist();
+			},
+			loadmore() {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				// this.getlist();
+			},
+			open(index) {
+				this.list[index].show = true;
+				this.list[index].arrowflag = true;
+				this.list.map((val, idx) => {
+					if (index != idx) {
+						this.list[idx].show = false;
+						this.list[idx].arrowflag = false;
+					}
+				})
+			},
+			close(index) {
+				this.list.map((val, idx) => {
+					this.list[idx].arrowflag = false;
+				})
+			},
+			click(index, index1) {
+				switch (index1) {
+					case 0:
+						console.log('恢复')
+						this.recovershow = true;
+						this.recoverindex = index;
+						break;
+					case 1:
+						console.log('删除')
+						this.delshow = true;
+						this.delindex = index;
+						break;
+					default:
+						return;
+				}
+			},
+			//删除
+			delconfirm() {
+				this.list.splice(this.delindex, 1)
+				this.delshow = false;
+			},
+			//恢复
+
+			recoverconfirm() {
+
+				this.recovershow = false;
+			},
+		}
+	}
+</script>
+
+<style lang="less" scoped>
+	/deep/.u-swipe-action {
+		border-radius: 20rpx;
+	}
+	.recycle {
+		background: #F8F8F8;
+
+		
+		.task-state {
+			padding:20rpx 30rpx;
+			background: #FFFFFF;
+			.subtop {
+				display: flex;
+				justify-content: space-between;		
+				.subsearch {
+					width: 80%;
+					flex: 1;
+				}
+			
+				.subnew {
+					display: flex;
+					justify-content: flex-end;
+					margin-left: 20rpx;
+			
+					.new {
+						background-color: #4abdb4;
+						color: #FFFFFF;
+						height: 70rpx;
+						line-height: 70rpx;
+						border-radius: 10rpx;
+						width: 120rpx;
+						text-align: center;
+						font-size: 28rpx;
+						margin-right: 20rpx;
+					}
+			
+					.reset {
+						background-color: #909399;
+						color: #FFFFFF;
+						height: 70rpx;
+						line-height: 70rpx;
+						border-radius: 10rpx;
+						width: 120rpx;
+						text-align: center;
+						font-size: 28rpx;
+			
+					}
+				}
+			}
+		}
+		.checktask-content {
+			padding: 30rpx;
+			padding-bottom: 100rpx;
+
+			.swipe {
+				margin-bottom: 20rpx;
+
+				.day {
+					width: 200rpx;
+					height: 60rpx;
+					line-height: 60rpx;
+					border-radius: 20rpx 0 20rpx 0;
+					color: #FFFFFF;
+					font-size: 28rpx;
+					text-align: center;
+					padding: 0 20rpx;
+				}
+
+				.red {
+					background: #fab6b6;
+				}
+
+				.normal {
+					background: #a0cfff;
+				}
+			}
+
+			.part {
+				padding: 20rpx;
+
+				background: #FFFFFF;
+				position: relative;
+
+
+				.top-part {
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+					margin: 10rpx 0;
+
+					.left {
+						.name {
+							color: #333333;
+							font-size: 32rpx;
+							margin-bottom: 20rpx;
+
+						}
+
+						.detail {
+							display: flex;
+							margin-bottom: 20rpx;
+							height: 50rpx;
+							line-height: 50rpx;
+
+							.title {
+								font-size: 30rpx;
+								color: #333333;
+							}
+
+							.size {
+								color: #606266;
+								font-size: 28rpx;
+							}
+
+							.time {
+								color: #999999;
+								font-size: 28rpx;
+
+								text {
+									color: #606266;
+									margin: 0 10rpx;
+								}
+							}
+						}
+					}
+
+					.right {
+						width: 100rpx;
+						text-align: right;
+
+						.name {
+							width: 100%;
+							flex: 1;
+							font-size: 30rpx;
+							color: #333333;
+							overflow: hidden;
+							display: -webkit-box;
+							text-overflow: ellipsis;
+							-webkit-line-clamp: 2;
+							-webkit-box-orient: vertical;
+							line-height: 50rpx;
+						}
+
+						.detail {
+							width: 100%;
+							display: flex;
+							justify-content: space-between;
+							line-height: 50rpx;
+
+							.size {
+								font-size: 28rpx;
+								color: #606266;
+							}
+
+							.time {
+								font-size: 24rpx;
+								color: #999999;
+							}
+						}
+					}
+				}
+
+				.action-part {
+					display: flex;
+					font-size: 28rpx;
+					border-top: 2rpx solid #f6f6f6;
+					padding-top: 30rpx;
+					justify-content: space-between;
+					align-items: center;
+
+					.left {
+						width: 60%;
+
+						.company-part {
+							display: flex;
+
+							image {
+								width: 50rpx;
+								height: 50rpx;
+								margin-right: 20rpx;
+							}
+
+							.company {
+								font-size: 30rpx;
+								color: #333333;
+
+							}
+						}
+
+						.prograss {
+							margin: 20rpx 0;
+						}
+					}
+
+					.right {
+						.state {
+							text-align: center;
+							margin-right: 20rpx;
+							border-radius: 60rpx;
+							color: #FFFFFF;
+							padding: 10rpx 20rpx;
+							font-size: 28rpx;
+						}
+
+						.red {
+
+							background: #FA3534;
+						}
+
+						.yellow {
+
+							background: #ff9900;
+						}
+
+						.blue {
+
+							background: #2979FF;
+						}
+
+						.gray {
+
+							background: #ECECEC;
+						}
+
+						.green {
+
+							background: #18b566;
+						}
+					}
+				}
+			}
+		}
+
+		.bottom {
+
+			position: fixed;
+			width: 100%;
+			background: #FFFFFF;
+			height: 100rpx;
+			line-height: 100rpx;
+			box-shadow: 0 -6rpx 10rpx rgba(0, 0, 0, 0.15);
+			bottom: 0;
+			z-index: 99;
+
+			.check-bottom {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 0 30rpx;
+
+				.left {
+					display: flex;
+					color: #2979ff;
+					font-size: 32rpx;
+
+				}
+
+				.right {
+					display: flex;
+					justify-content: flex-end;
+
+					.batch {
+
+						background: #19be6b;
+						color: #FFFFFF;
+						border-radius: 40rpx;
+						height: 60rpx;
+						line-height: 60rpx;
+						text-align: center;
+						margin-right: 20rpx;
+						padding: 0 20rpx;
+						box-shadow: 0 6rpx 6rpx #71d5a1;
+
+					}
+
+					.stop {
+						background: #ff9900;
+						margin: 20rpx 0;
+					}
+
+					.del {
+						background: #fa3534;
+						box-shadow: 0 6rpx 6rpx #fab6b6;
+					}
+				}
+			}
+
+		}
+	}
+</style>

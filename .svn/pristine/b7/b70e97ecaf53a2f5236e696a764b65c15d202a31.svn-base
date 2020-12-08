@@ -1,0 +1,303 @@
+<template>
+	<view class="problemList">
+		<a-head :text="headTitle"></a-head>
+		<view class="scorll-content">
+			<scroll-view class="scroll-view_H" scroll-x="true" @scroll="scroll" scroll-left="120">
+				<view class="top">
+					<view class="scorll-th">
+						<view class="srorll-title">
+							项目序号
+						</view>
+					</view>
+					<view class="scorll-th">
+						<view class="srorll-title">
+							状态
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="srorll-title">
+							检查单位
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="srorll-title">
+							评判项目
+						</view>
+					</view>
+					<view class="scorll-th">
+						<view class="srorll-title">
+							标准
+						</view>
+					</view>
+					<view class="scorll-th">
+						<view class="srorll-title">
+							整改人员
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="srorll-title">
+							问题信息
+						</view>
+					</view>
+					<view class="scorll-th">
+						<view class="srorll-title">
+							扣分
+						</view>
+					</view>
+					<view class="scorll-th pic">
+						<view class="srorll-title">
+							问题图片
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="srorll-title">
+							问题备注
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="srorll-title">
+							整改措施
+						</view>
+					</view>
+					<view class="scorll-th pic">
+						<view class="srorll-title">
+							整改图片
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="srorll-title">
+							整改备注
+						</view>
+					</view>
+					<view class="scorll-th">
+						<view class="srorll-title">
+							整改时间
+						</view>
+					</view>
+				</view>
+				<view v-for="i in 5">
+					<view class="scorll-th">
+						<view class="scorll-td">
+							<view class="content">
+								111
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th">
+						<view class="scorll-td">
+							<view class="content">
+								待审核
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="scorll-td detail">
+							<view class="content">
+								xxxx单位
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="scorll-td">
+							<view class="content">
+								xxxx项目
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th">
+						<view class="scorll-td">
+							<view class="content">
+								xxxx标准
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th">
+						<view class="scorll-td">
+							<view class="content">
+								张三
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="scorll-td">
+							<view class="content">
+								问题信息问题信息问题信息问题信息问题信息问题信息问题信息问题信息问题信息问题信息
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th">
+						<view class="scorll-td">
+							<view class="content">
+								-2
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th pic">
+						<view class="scorll-td">
+							<view class="content">
+								<text class="tips">*点击查看大图</text>
+								<u-swiper :list="list" @click="previewImage()"></u-swiper>
+
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="scorll-td">
+							<view class="content">
+								问题备注
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th detail">
+
+						<view class="scorll-td">
+							<view class="content">
+								整改措施
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th pic">
+						<view class="scorll-td">
+							<view class="content">
+								<text class="tips">*点击查看大图</text>
+								<u-swiper :list="list"></u-swiper>
+
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="scorll-td">
+							<view class="content">
+								整改备注整改备注整改备注整改备注整改备注整改备注整改备注整改备注
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th">
+						<view class="scorll-td">
+							<view class="content">
+								{{$u.timeFormat('1581170184', 'yyyy-mm-dd hh:MM:ss')}}
+							</view>
+						</view>
+					</view>
+				</view>
+			</scroll-view>
+		</view>
+	</view>
+
+</template>
+
+<script>
+	export default {
+		data() {
+			return {
+				headTitle: '问题明细',
+				list: [{
+						image: 'https://cdn.uviewui.com/uview/swiper/1.jpg',
+
+					},
+					{
+						image: 'https://cdn.uviewui.com/uview/swiper/2.jpg',
+
+					},
+					{
+						image: 'https://cdn.uviewui.com/uview/swiper/3.jpg',
+
+					}
+				],
+			}
+		},
+		onLoad(options) {
+			if (options) {
+				this.headTitle = options.title + '问题明细';
+			} else {
+				this.headTitle = '问题明细';
+			}
+
+		},
+		methods: {
+			scroll(e) {
+
+			},
+			//预览图片
+			previewImage() {
+				let list = [];
+				this.list.map(i => {
+					list.push(i.image)
+				})
+				let current = list[0];
+				uni.previewImage({
+					current: current, // 当前显示图片的http链接  
+					urls: list // 需要预览的图片http链接列表  
+				})
+			},
+		},
+	}
+</script>
+
+<style lang="less" scoped>
+	.scorll-content {
+		padding: 30rpx 0 100rpx 30rpx;
+
+		.scroll-view_H {
+			white-space: nowrap;
+			width: 100%;
+
+			.scorll-th {
+				display: inline-grid;
+				width: 20%;
+
+
+				.srorll-title {
+					height: 60rpx;
+					line-height: 60rpx;
+					text-align: center;
+					font-size: 28rpx;
+					border: 1px solid #f6f6f6;
+					background: #6ecac3;
+					color: #FFFFFF;
+					padding: 10rpx 0;
+				}
+
+				.scorll-td {
+					width: 100%;
+					border: 1px solid #f6f6f6;
+					font-size: 28rpx;
+					color: #606266;
+					height: 200rpx;
+					white-space: normal;
+					overflow-y: auto;
+
+					.content {
+						padding: 10rpx 20rpx;
+						line-height: 40rpx;
+						white-space: normal;
+
+						.tips {
+							margin-bottom: 3px;
+							font-size: 24rpx;
+							color: #999999;
+						}
+					}
+				}
+			}
+
+			.detail {
+				width: 30%;
+			}
+
+			.pic {
+				width: 300rpx;
+
+				/deep/uni-swiper {
+					height: 70px !important;
+				}
+			}
+
+
+
+
+
+
+		}
+	}
+</style>

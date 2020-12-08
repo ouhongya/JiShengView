@@ -1,0 +1,31 @@
+<template>
+	<view class="">
+		这里是标准模板
+		<u-sticky :offset-top="offset">
+	
+		 </u-sticky>
+	</view>
+</template>
+
+<script>
+	export default {
+		props: {
+			offset: {
+				type: Number,
+				default: 0
+			},
+		},
+		data() {
+			return {
+				
+			}
+		},
+		methods: {
+		
+		}
+	}
+</script>
+
+<style>
+
+</style>

@@ -1,0 +1,17 @@
+{
+  "navigationBarTitleText": "回收站",
+  "onReachBottomDistance": 50,
+  "enablePullDownRefresh": false,
+  "usingComponents": {
+    "u-sticky": "/uview-ui/components/u-sticky/u-sticky",
+    "u-input": "/uview-ui/components/u-input/u-input",
+    "u-swipe-action": "/uview-ui/components/u-swipe-action/u-swipe-action",
+    "u-badge": "/uview-ui/components/u-badge/u-badge",
+    "u-icon": "/uview-ui/components/u-icon/u-icon",
+    "u-line-progress": "/uview-ui/components/u-line-progress/u-line-progress",
+    "u-loadmore": "/uview-ui/components/u-loadmore/u-loadmore",
+    "u-modal": "/uview-ui/components/u-modal/u-modal",
+    "u-calendar": "/uview-ui/components/u-calendar/u-calendar",
+    "u-toast": "/uview-ui/components/u-toast/u-toast"
+  }
+}

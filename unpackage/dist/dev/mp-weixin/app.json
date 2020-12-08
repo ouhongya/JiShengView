@@ -1,0 +1,38 @@
+{
+  "pages": [
+    "pages/startpage/startpage",
+    "pages/login/login",
+    "pages/index/index",
+    "pages/public/public",
+    "pages/public/newpublic",
+    "pages/public/range",
+    "pages/public/publicList",
+    "pages/problem/list",
+    "pages/process/process",
+    "pages/task/task",
+    "pages/recycle/recycle",
+    "pages/task/standard",
+    "pages/task/detail",
+    "pages/task/score"
+  ],
+  "subPackages": [],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "uni-app",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "navigationStyle": "custom",
+    "backgroundColor": "#F8F8F8",
+    "rpxCalcMaxDeviceWidth": 750,
+    "rpxCalcBaseDeviceWidth": 375,
+    "rpxCalcIncludeWidth": 750
+  },
+  "networkTimeout": {
+    "request": 120000,
+    "connectSocket": 60000,
+    "uploadFile": 60000,
+    "downloadFile": 60000
+  },
+  "usingComponents": {
+    "a-head": "/components/Ahead/index"
+  }
+}

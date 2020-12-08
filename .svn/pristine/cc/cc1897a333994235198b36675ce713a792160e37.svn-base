@@ -1,0 +1,481 @@
+<template>
+	<view class="head_box">
+		<view class='head' :style="'background:'+bgColor">
+			<view class='head_title' :style="'margin-top:'+PhoneHeight+'px;'">
+				<view v-if="showBack" class="head_back" @click="back">
+					<u-icon name="arrow-left" :color="backColor" size="32"></u-icon>
+				</view>
+				<view class="drawer" @click="drawer()" v-if="showList">
+					<u-icon name="list" color="#ffffff" size="50"></u-icon>
+					<u-badge type="error" :count="msg" class="badge-msg"></u-badge>
+				</view>
+				<view class="title" :style="'color:'+textColor">{{text}}</view>
+			</view>
+		</view>
+		<view v-if="station" :style="'min-height:'+(PhoneHeight+44)+'px;height:'+headHeight">
+			<image v-if="bgImage" :style="bgStyle" :src="bgImage" mode="aspectFill"></image>
+		</view>
+		<!-- 左侧内容 -->
+		<u-popup v-model="showDrawer" mode="left" width="60%">
+			<view>
+				<view class="person">
+					<view class="headpart">
+						<view class="headperson">
+							<view class="imgPart">
+								<image src="../../static/headpic1.png" mode=""></image>
+							</view>
+							<view class="info">
+								<view class="">
+									{{name}}
+								</view>
+								<view class="">
+									{{phone}}
+								</view>
+							</view>
+						</view>
+						<view class="company">
+							成都积盛电子科技有限公司
+						</view>
+					</view>
+
+
+					<view class="list-part">
+						<view class="list">
+							<image src="../../static/checkin1.png" mode=""></image>
+							<view>导入准则</view>
+						</view>
+						<view class="list">
+							<image src="../../static/del1.png" mode=""></image>
+							<view>回收站</view>
+						</view>
+						<view class="list" @click="checkOut()">
+							<image src="../../static/checkout1.png" mode=""></image>
+							<view>导出全部</view>
+						</view>
+						<view class="list">
+							<image src="../../static/change1.png" mode=""></image>
+							<view>切换账号</view>
+						</view>
+						<view class="list">
+							<image src="../../static/load1.png" mode=""></image>
+							<view>模板下载</view>
+						</view>
+					</view>
+					<view class="list-part">
+						<view class="list">
+
+							<image src="../../static/public1.png" mode=""></image>
+							<view>公告</view>
+							<u-badge type="error" :count="msg" class="badge-msg"></u-badge>
+						</view>
+						<view class="list">
+							<image src="../../static/asking2.png" mode=""></image>
+							<view>目录说明</view>
+						</view>
+					</view>
+				</view>
+				<view class="bottom">
+					<view class="txt">
+						V2.0.0
+					</view>
+				</view>
+			</view>
+		</u-popup>
+		<!-- 导出弹出框 -->
+		<!-- 导出选择 -->
+
+		<u-modal v-model="chooseModal" :title-style="{color: '#fff',background:'#4abdb4'}" @confirm="confirmCheck()"
+		 :confirm-style="{color:'#4abdb4'}" :show-cancel-button="true">
+			<view class="slot-content">
+				<view class="contentModel">
+					<u-form :model="form" ref="uForm" label-position="top">
+						<u-form-item label="*是否导出图片" :label-style="{color:'#333',fontSize:'32rpx'}">
+							<u-radio-group v-model="checkpic">
+								<u-radio v-for="(item, index) in checkpicList" :key="index" :name="item.name">
+									{{ item.name }}
+								</u-radio>
+							</u-radio-group>
+						</u-form-item>
+						<u-form-item label="*导出数据类型" :label-style="{color:'#333',fontSize:'32rpx'}">
+							<u-radio-group v-model="checktype">
+								<u-radio v-for="(item, index) in checktypeList" :key="index" :name="item.name">
+									{{ item.name }}
+								</u-radio>
+							</u-radio-group>
+						</u-form-item>
+					</u-form>
+				</view>
+
+			</view>
+		</u-modal>
+		<!-- 导出进度 -->
+		<u-modal v-model="prograssModel" :title-style="{color: '#fff',background:'#4abdb4'}" confirm-text="开始导出" cancel-text="取消导出"
+		 @confirm="confirmPrograss()" :show-cancel-button="true" :confirm-style="{color:'#4abdb4'}">
+			<view class="slot-content">
+				<view class="contentModel">
+					<u-line-progress :striped="true" :percent="percent" :striped-active="true"></u-line-progress>
+				</view>
+			</view>
+		</u-modal>
+		<u-modal v-model="outModel" :title-style="{color: '#fff',background:'#4abdb4'}" :show-cancel-button="false"
+		 confirm-text="我知道了" @confirm="confirmOut()" :confirm-style="{color:'#4abdb4'}">
+			<view class="slot-content">
+				<view class="contentModel">
+					<view class="succcess">
+						<u-icon name="checkbox-mark" color="#4abdb4" size="30"></u-icon>数据已成功导出
+					</view>
+				</view>
+			</view>
+		</u-modal>
+	</view>
+</template>
+
+<script>
+	/**
+	 * head 头部
+	 * @description 本组件一般用于页面头部
+	 * @property {Boolean} show-back 是否显示左边的返回图标(默认为true)
+	 * @property {Boolean} station 是否占用高度(默认为true)
+	 * @property {Boolean} height 高度(默认为true)
+	 * @property {String} back-url 左边的返回图标跳转页面（默认返回上一页）
+	 * @property {String} back-color 左边的返回图标颜色(默认颜色#ffffff)
+	 * @property {String} text 标题名称(默认为空)
+	 * @property {String} text-color 标题字体颜色（默认#ffffff,不需要背景颜色为none）
+	 * @property {String} bg-color 背景颜色（默认#ffffff,不需要背景颜色为none）
+	 * @property {String} bg-image 背景图片链接（有背景图片就会占用高度）
+	 * @property {String} bg-style 背景图片样式(父页面自定义)
+	 * @property {String} show-lead 是否展示头部导航
+	 * @property {String} question 是否展示小圆点
+	 * @property {String} action 是否展示小圆点
+	 * @property {Boolean} active1 是否当前选中(默认为false)
+	 * @example <a-head :show-back="false" :text="个人中心"></a-head>
+	 */
+	import app from '@/App.vue'
+
+	export default {
+		props: {
+			showBack: {
+				type: Boolean,
+				default () {
+					return true;
+				}
+			},
+			showList: {
+				type: Boolean,
+				default () {
+					return false;
+				}
+			},
+
+			height: {
+				type: String,
+				default () {
+					return '';
+				}
+			},
+			backUrl: {
+				type: String,
+				default () {
+					return '';
+				}
+			},
+			parameter: {
+				type: String,
+				default () {
+					return '';
+				}
+			},
+			backColor: {
+				type: String,
+				default () {
+					return '#ffffff';
+				}
+			},
+			station: {
+				type: Boolean,
+				default () {
+					return true;
+				}
+			},
+			text: {
+				type: String,
+				default () {
+					return '';
+				}
+			},
+			bgColor: {
+				type: String,
+				default () {
+					return '#00b2a4';
+				}
+			},
+			textColor: {
+				type: String,
+				default () {
+					return '#ffffff';
+				}
+			},
+			bgImage: {
+				type: String,
+				default () {
+					return '';
+				}
+			},
+			bgStyle: {
+				type: String,
+				default () {
+					return '';
+				}
+			}
+		},
+		data() {
+			return {
+				headHeight: '',
+				PhoneHeight: 0,
+				windowHeight: 0,
+				//是否显示左侧抽屉
+				showDrawer: false,
+				name: '这里是姓名',
+				phone: '这里是电话号码',
+				msg: '3', //公告数量(大于0时显示)
+				chooseModal: false, // 导出弹框
+				prograssModel: false,
+				outModel: false,
+				form: {},
+				checkpic: '男',
+				checktype: '全部数据',
+				checkpicList: [{
+						name: '男',
+					},
+					{
+						name: '女',
+					}
+				],
+				checktypeList: [{
+						name: '全部数据'
+					},
+					{
+						name: '问题数据'
+					},
+				],
+				percent: 85 //导出进度百分比
+			}
+		},
+		created() {
+
+
+
+
+			let that = this
+			this.PhoneHeight = app.methods.getPhoneHeight()
+			this.headHeight = this.height ? this.height : (this.PhoneHeight + 44) + 'px'
+			uni.getSystemInfo({
+				success(res) {
+					that.windowHeight = res.windowHeight
+				}
+			})
+		},
+		methods: {
+			// 导出弹框
+			checkOut() {
+				this.chooseModal = true;
+
+			},
+
+			confirmCheck() {
+				this.chooseModal = false;
+				this.prograssModel = true;
+			},
+			confirmPrograss() {
+				if (this.percent < 100) {
+					this.percent++;
+					this.confirmPrograss();
+				} else {
+					this.prograssModel = false;
+					this.outModel = true;
+				}
+			},
+			confirmOut() {
+				this.outModel = false;
+			},
+			//抽屉是否显示
+			drawer() {
+				this.showDrawer = true;
+			},
+
+			// 返回
+			back() {
+				if (this.backUrl) {
+
+					if (this.parameter) {
+						uni.navigateTo({
+							url: this.backUrl + '?parameter=' + this.parameter
+						})
+					} else {
+						uni.navigateTo({
+							url: this.backUrl
+						})
+					}
+				} else {
+					uni.navigateBack()
+				}
+			}
+
+		}
+	}
+</script>
+
+<style scoped lang="scss">
+	//弹出框样式
+	/deep/.u-model__title {
+		padding: 24rpx 0;
+	}
+
+	.contentModel {
+		padding: 30rpx;
+
+		.succcess {
+			font-size: 30rpx;
+
+		}
+	}
+
+	// 头部
+	.head_box {
+		position: relative;
+		z-index: 999;
+
+
+		.head {
+			position: fixed;
+			width: 100%;
+			top: 0;
+			left: 0;
+			z-index: 99;
+
+
+			.head_title {
+				height: 44px;
+				padding: 0 30rpx;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+
+				.title {
+					flex: 1;
+					font-size: 36rpx;
+					color: #FFFFFF;
+					font-weight: bold;
+					text-align: center;
+					overflow: hidden;
+					white-space: nowrap;
+					text-overflow: ellipsis;
+				}
+
+				.head_back,
+				.drawer {
+					display: flex;
+					align-items: center;
+					width: 88rpx;
+					height: 88rpx;
+					position: absolute;
+				}
+
+			}
+
+
+
+
+		}
+	}
+
+	// 左侧弹出 
+	.person {
+
+		.headpart {
+			background: #6ecac3;
+			padding: 40rpx 30rpx 30rpx 30rpx;
+
+			.headperson {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin: 30rpx 0;
+
+				.imgPart {
+					margin-right: 30rpx;
+					text-align: center;
+					border-radius: 50%;
+
+					image {
+						width: 100rpx;
+						height: 100rpx;
+						border: 2rpx solid #FFFFFF;
+						border-radius: 50%;
+					}
+				}
+
+				.info {
+					width: 100%;
+					height: 100rpx;
+					flex: 1;
+					line-height: 50rpx;
+					font-size: 28rpx;
+					color: #FFFFFF;
+				}
+			}
+
+			.company {
+				width: 100%;
+				color: #FFFFFF;
+				line-height: 30rpx;
+				font-size: 30rpx;
+				text-align: center;
+
+			}
+		}
+
+		.list-part {
+			margin: 100rpx 0;
+			padding: 30rpx;
+
+			.list {
+				width: 50%;
+				margin: 0 auto 40rpx;
+				font-size: 30rpx;
+				color: #8a8a8a;
+				position: relative;
+				display: flex;
+				align-items: center;
+				flex: 2;
+
+				image {
+					width: 40rpx;
+					height: 40rpx;
+					margin-right: 20rpx;
+				}
+
+				.badge-msg {
+					position: absolute;
+					top: 0 !important;
+					left: 120rpx;
+					right: auto !important;
+
+				}
+
+			}
+		}
+
+	}
+
+	.bottom {
+		position: fixed;
+		bottom: 30rpx;
+		width: 100%;
+		font-size: 28rpx;
+		text-align: center;
+		color: #999999;
+		width: 100%;
+
+	}
+</style>

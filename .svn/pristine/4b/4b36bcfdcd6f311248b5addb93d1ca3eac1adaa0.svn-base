@@ -1,0 +1,1389 @@
+<template>
+	<view class="standard">
+		<u-sticky :offset-top="offset">
+			<view class="standard-top">
+				<l-file ref="lFile" @up-success="onSuccess"></l-file>
+				<view class="action" @click="onUpload()">
+					新增标准
+				</view>
+				<view class="action" @click="upload()">
+					模板下载
+				</view>
+				<view class="action" @click="batch()">
+					{{batchtitle}}
+				</view>
+			</view>
+			<view class="subsearch">
+				<u-search placeholder="请输入标准名称" v-model="standardName" shape="square" :action-style="actionStyle" border-color='#4abdb4'
+				 bg-color="#ffffff" @search="searchStandard()" @custom="searchStandard()" @clear="clear()"></u-search>
+			</view>
+		</u-sticky>
+		<view class="standard-content">
+			<view class="empty" v-if="list.length <= 0">
+				<image src="../../static/nodata.png" mode=""></image>
+				<view class="empty-tips">
+					暂无数据
+				</view>
+			</view>
+			<scroll-view scroll-y style="height:60vh;width: 100%;" @scrolltolower="onreachBottom">
+				<view class="part" v-for="(item,index) in list">
+					<view class="top-part">
+						<view class="left">
+							<view class="check" v-if="showCheck">
+								<checkbox :value="item.value" :checked="item.checked" @click="check(index)" />
+							</view>
+							<image src="../../static/excel.png" mode=""></image>
+						</view>
+						<view class="right">
+							<view class="name">
+								{{item.new_name}}
+							</view>
+							<view class="detail">
+								<view class="size">
+									{{item.magnitude}}
+								</view>
+								<view class="time">
+									{{$u.timeFormat(item.created_time, 'yyyy-mm-dd hh:MM:ss')}}
+								</view>
+							</view>
+						</view>
+					</view>
+					<view class="action-part" v-if="item.flag">
+						<view v-if="item.view==2">
+							<view class="allot " v-if="item.status==1 && item.view==1" @click="allot('edit',item.id,true)">
+								已下发
+							</view>
+							<view class="allot " v-if="item.status==1 && item.view==2" @click="allot('single',item.id,false)">
+								未下发
+							</view>
+							<view class="allot gray" v-if="item.status==2">
+								下发
+							</view>
+						</view>
+						<view v-else>
+							<view class="allot gray">
+								下发
+							</view>
+						</view>
+						<view class="see" v-if="item.status==1" @click="reviewname(index)">
+							重命名
+						</view>
+						<view class="see gray" v-if="item.status==2">
+							重命名
+						</view>
+						<view class="use" v-if="item.status==2" @click="startUse(index)">
+							启用
+						</view>
+						<view class="use" v-if="item.status==1" @click="stopUse(index,item.new_name)">
+							停用
+						</view>
+						<view class="del" @click="del(index,item.name)">
+							删除
+						</view>
+					</view>
+					<view class="action-part" v-else>
+						<view class="allot gray">
+							下发
+						</view>
+						<view class="see gray">
+							重命名
+						</view>
+						<view class="use gray" v-if="item.status==2" >
+							启用
+						</view>
+						<view class="use gray" v-if="item.status==1">
+							停用
+						</view>
+						<view class="del gray" @click="del(index,item.name)">
+							删除
+						</view>
+					</view>
+				</view>
+				<u-loadmore @loadmore="loadmore" bg-color="none" :status="status" :icon-type="iconType" margin="30" :load-text="loadText"
+				 v-if="list.length >=1" />
+			</scroll-view>
+		</view>
+		<view class="bottom" v-if="showCheck&&list.length >=1">
+			<view class="check-bottom">
+				<view class="left">
+					<checkbox value="all" :checked="all" @click="checkAll()" />
+					<view>全选</view>
+				</view>
+				<view class="right">
+					<view class="batch" @click="allot('batch',null,false)">
+						批量下发
+					</view>
+					<!-- <view class="batch stop" @click="batchStop()">
+						停用
+					</view> -->
+					<view class="batch del" @click="batchDel()">
+						批量删除
+					</view>
+				</view>
+			</view>
+		</view>
+		<!-- 下发或批量下发 -->
+		<u-popup v-model="showAllot" mode="bottom" height="80%" @close="close()">
+			<view class="roleModel">
+				<view class="roleTop">
+					{{allotitle}}
+				</view>
+				<view class="content">
+					<view class="choose">
+						<view class="title">
+							查看数据人员
+						</view>
+						<view class="input_part">
+							<u-input v-model="person" type="select" :border="true" @click="openPerson()" height="70" />
+						</view>
+						<view class="add" @click="addPerson()">
+							添加
+						</view>
+					</view>
+					<view class="hasChoosed" v-if="personList.length>0">
+						<view class="has" v-for="(item,index) in personList">
+							<view class="name">
+								{{item.name}}
+							</view>
+							<view class="icon" @click="delPerson(index)">
+								<u-icon name="close" color="#cccccc" size="28"></u-icon>
+							</view>
+						</view>
+					</view>
+					<view class="range">
+						<view class="title">
+							下发范围
+						</view>
+						<view class="part">
+							<view class="left">
+								<view class="top">
+									<view class="">
+										待选列表
+									</view>
+									<u-checkbox-group @change="checkedAllList">
+										<u-checkbox v-model="listchoose" active-color="#4abdb4">全选</u-checkbox>
+									</u-checkbox-group>
+
+								</view>
+								<view class="list">
+									<scroll-view scroll-y style="height:300rpx;width: 100%;">
+										<u-checkbox-group @change="checkboxGroupChange" :wrap="true">
+											<u-checkbox @change="checkboxChange" v-model="item.checked" v-for="(item, index) in checkList" :key="index"
+											 :name="item.id" active-color="#4abdb4">
+												<text class="job">{{item.job}}</text><text>{{item.name}}</text>
+											</u-checkbox>
+										</u-checkbox-group>
+									</scroll-view>
+								</view>
+							</view>
+							<view class="right">
+								<view class="top">
+									已选列表
+								</view>
+								<view class="list">
+									<scroll-view scroll-y style="height:300rpx;width: 100%;">
+										<view class="has" v-for="(item,index) in hasList" v-if="hasList.length>0">
+											<view class="name">
+												{{item.name}}
+											</view>
+											<view class="icon" @click="delChecklist(index)">
+												<u-icon name="close" color="#cccccc" size="28"></u-icon>
+											</view>
+										</view>
+									</scroll-view>
+								</view>
+							</view>
+						</view>
+					</view>
+					<!-- <view class="choose">
+						<view class="title">
+							关联标准
+						</view>
+						<view class="input_part">
+							<u-input v-model="relevance" type="select" :border="true" @click="openRelevance()" height="70" />
+						</view>
+						<view class="add" @click="addrelevance()">
+							添加
+						</view>
+					</view>
+					<view class="hasChoosed" v-if=" addrelevanceList.length>0">
+						<view class="has" v-for="(item,index) in addrelevanceList">
+							<view class="name">
+								{{item.name}}
+							</view>
+							<view class="icon" @click="deladdrelevance(index)">
+								<u-icon name="close" color="#cccccc" size="28"></u-icon>
+							</view>
+						</view>
+					</view> -->
+				</view>
+
+				<view class="roleAction">
+					<view class="cancel" @click="cancel()">
+						取消
+					</view>
+					<view class="sure" @click="sure()">
+						确定
+					</view>
+				</view>
+			</view>
+			<!-- 选择人员 -->
+			<u-action-sheet :list="personSheetList" v-model="showPersonList" @click="personSheetCallback" border-radius="20"></u-action-sheet>
+			<!-- 关联标准 -->
+			<u-action-sheet :list="relevanceSheetList" v-model="showRelevanceList" @click="relevanceSheetCallback" border-radius="20"></u-action-sheet>
+		</u-popup>
+		<!-- 重命名 -->
+		<u-modal v-model="renameshow" @confirm="renameconfirm" ref="uModal" :async-close="true" :show-cancel-button="true"
+		 :confirm-style="{'color':'#fa3534'}" :show-title="false">
+			<view class="slot-content">
+				<view class="model">
+					<view class="rename">
+						<u-input v-model="renamevalue" type="text" :border="true" placeholder="请输入名称" />
+					</view>
+					<view class="tips">
+						名称长度范围为2-30个字符，请勿输入特殊符号
+					</view>
+				</view>
+			</view>
+		</u-modal>
+		<!-- 停用 -->
+		<u-modal v-model="stopshow" @confirm="stopconfirm" :async-close="true" :show-cancel-button="true" :confirm-style="{'color':'#fa3534'}"
+		 :show-title="false">
+			<view class="slot-content">
+				<view class="model">
+					<view class="stop">
+						您确定要停用【{{Title}}】吗?
+					</view>
+					<view class="tips">
+						停用后标准将被冻结，无法继续
+					</view>
+				</view>
+			</view>
+		</u-modal>
+		<!-- 删除 -->
+		<u-modal v-model="delshow" @confirm="delconfirm" :async-close="true" :show-cancel-button="true" :confirm-style="{'color':'#fa3534'}"
+		 :show-title="false">
+			<view class="slot-content">
+				<view class="model">
+					<view class="stop">
+						您确定要删除【{{Title}}】吗?
+					</view>
+					<view class="tips">
+						已下发的标准将同时删除
+					</view>
+				</view>
+			</view>
+		</u-modal>
+		<!-- 批量删除 -->
+		<u-modal v-model="delAllshow" @confirm="delAllconfirm" :async-close="true" :show-cancel-button="true" :confirm-style="{'color':'#fa3534'}"
+		 :show-title="false">
+			<view class="slot-content">
+				<view class="model">
+					<view class="stop">
+						您确定要删除已选中的标准吗?
+					</view>
+					<view class="tips">
+						已下发的标准将同时删除
+					</view>
+				</view>
+			</view>
+		</u-modal>
+		<u-toast ref="uToast" />
+	</view>
+</template>
+
+<script>
+	import helper from '@/common/helper.js'
+	import lFile from '@/components/l-file/l-file.vue'
+	export default {
+		props: {
+			offset: {
+				type: Number,
+				default: 0
+			},
+		},
+		data() {
+			return {
+				standardName: '',
+				showCheck: false,
+				batchtitle: '批量管理',
+				checkLength: '0',
+				checkList: [],
+				actionStyle: {
+					backgroundColor: '#4abdb4',
+					color: '#fff',
+					margin: '0',
+					width: '100rpx',
+					height: '68rpx',
+					lineHeight: '68rpx',
+					borderRadius: '0 10rpx 10rpx 0'
+				},
+				list: [],
+				all: false, //是否全选
+				renameshow: false,
+				renameindex: '',
+				renamevalue: '',
+				stopshow: false,
+				stopIndex: '',
+				delshow: false,
+				delIndex: '',
+				delAllshow: false,
+				Title: '',
+				showAllot: false,
+				allotitle: '下发',
+				allotId: null,
+				allotFlag: false,
+				allotIds: [],
+				personList: [],
+				person: '',
+				personId: '',
+				hasList: [],
+				listchoose: false,
+				relevance: '',
+				addrelevanceList: [],
+				personSheetList: [],
+				showPersonList: false,
+				relevanceSheetList: [],
+				showRelevanceList: false,
+				// 分页
+				status: 'loadmore', // 下拉加载状态
+				iconType: 'flower',
+				loadText: {
+					loadmore: '点击或上拉加载更多',
+					loading: '正在加载...',
+					nomore: '我也是有底线的'
+				},
+				pages: 1, //实际页数
+				pageNum: 1, //当前下拉加载页数
+				pageSize: 10, //每页的条数
+				uid: null
+			}
+		},
+		created() {
+			let _this = this
+			this.uid = uni.getStorageSync("USER_ID")
+			_this.getlist('');
+			_this.querySpecialtyAndGroup()
+		},
+		methods: {
+			//搜索时触发
+			searchStandard() {
+				this.getlist(this.standardName);
+			},
+			//搜索时点击清除按钮触发
+			clear() {
+				this.getlist('');
+			},
+			getlist(search) {
+				this.status = 'loading';
+				let param = {
+					page: this.pageNum,
+					size: this.pageSize,
+					uid: this.uid,
+					search: search
+				}
+				helper.request(helper.websiteUrl + 'v1/queryExcelList', param, 'POST', true, res => {
+					if (res.length != 0) {
+						this.pages = parseInt(res[0].total)
+						let array = [];
+						res.forEach(item => {
+							if(item.user_id==this.uid){
+								item.flag=true
+							}else{
+								item.flag=false
+							}
+							item.checked = false;
+						})
+						res.forEach(item=>{
+							if(item.flag){
+								array.push(item)
+							}
+						})
+						res.forEach(item=>{
+							if(!item.flag){
+								array.push(item)
+							}
+						})
+						const recordsList = array;
+						if (this.pageNum > 1) {
+							this.list = this.publiclist.concat(recordsList);
+							this.status = 'nomore';
+						} else {
+							this.list = recordsList;
+							this.status = 'nomore';
+						}
+					} else {
+						this.list = [];
+						this.pages = 1;
+						this.pageNum = 1;
+						this.status = 'nomore';
+					}
+				})
+			},
+			// 上拉加载
+			onreachBottom(e) {
+				if (this.pageNum >= this.pages) {
+					this.status = 'nomore';
+					return;
+				} else {
+					this.pageNum += 1;
+					this.getlist();
+				}
+			},
+			//下拉刷新数据
+			loadmore() {
+				if (this.pageNum >= this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				this.getlist();
+			},
+			//批量管理
+			batch() {
+				this.showCheck = !this.showCheck
+				if (this.showCheck) {
+					this.batchtitle = '管理完成'
+				} else {
+					this.batchtitle = '批量管理'
+				}
+			},
+			//选中单个
+			check(index) {
+				let checkLength = '0';
+				this.list[index].checked = !this.list[index].checked;
+				this.allotIds = [];
+				this.list.map(item => {
+					if (item.checked) {
+						checkLength++;
+						if (item.view == 2) {
+							this.allotIds.push(item.id)
+						}
+					}
+				})
+				if (checkLength == this.list.length) {
+					this.all = true;
+				} else {
+					this.all = false;
+				}
+				this.checkLength = checkLength;
+			},
+			//全选
+			checkAll() {
+				this.allotIds = []
+				if (this.all == true) {
+					this.checkLength=0
+					this.list.forEach(val => {
+						val.checked = false;
+					})
+					this.all = false
+				} else {
+					this.list.map(val => {
+						val.checked = true;
+						if (val.view == 2) {
+							this.allotIds.push(val.id)
+							
+						}
+					})
+					this.all = true
+					this.checkLength=this.allotIds.length
+				}
+			},
+			//批量删除
+			batchDel() {
+				if (this.checkLength == '0') {
+					this.$refs.uToast.show({
+						title: '请至少选择一项标准进行删除',
+						type: 'warning'
+					})
+					return;
+				}
+				this.delAllshow = true
+			},
+			//批量下发确定操作
+			delAllconfirm() {
+				let arr = []
+				this.list.map((item, index) => {
+					if (item.checked) {
+						arr.push(item.id);
+					}
+				})
+				let obj = JSON.stringify(arr)
+				let param = {
+					uid: this.uid,
+					id: obj
+				}
+				helper.request(helper.websiteUrl + 'v1/deleteExcel', param, 'POST', true, res => {
+					this.status = 'loading';
+					this.getlist('');
+					this.delAllshow = false
+				})
+			},
+			//下发或批量下发
+			allot(type, id, flag) {
+				//数据回显工作
+				this.allotId = id
+				if (type == 'single' && flag == false) {
+					this.showAllot = true;
+					this.allotFlag = true;
+					this.allotitle = '下发';
+				}
+				if (type == 'edit' && flag == true) {
+					this.queryAllot(id);
+					this.showAllot = true;
+					this.allotFlag = false;
+					this.allotitle = '编辑下发';
+				}
+				if (type == 'batch') {
+					this.queryAllot(id);
+					if (this.checkLength == '0') {
+						this.$refs.uToast.show({
+							title: '请至少选择一项标准进行下发',
+							type: 'warning'
+						})
+						return;
+					}
+					this.allotIds.forEach(item => {
+						this.queryAllot(item);
+					})
+					this.showAllot = true;
+					this.allotFlag = true;
+					this.allotitle = '批量下发';
+				}
+			},
+			// 重命名
+			reviewname(index) {
+				this.renamevalue = this.list[index].new_name;
+				this.renameshow = true;
+				this.renameindex = index;
+			},
+			//确定重命名
+			renameconfirm() {
+				if (!/[u4e00-u9fa5_a-zA-Z0-9_]{2,30}/.test(this.renamevalue)) {
+					this.$refs.uToast.show({
+						title: '名称长度范围为2-30个字符',
+						type: 'warning'
+					})
+					this.$refs.uModal.clearLoading();
+					return false;
+				} else {
+					let id = this.list[this.renameindex].id
+					let param = {
+						uid: this.uid,
+						id: id,
+						name: this.renamevalue
+					}
+					helper.request(helper.websiteUrl + 'v1/rename', param, 'POST', true, res => {
+						this.status = 'loading';
+						this.getlist('');
+					})
+					this.renameshow = false;
+				}
+
+			},
+			// 启用
+			startUse(index) {
+				let arr = [this.list[index].id]
+				let obj = JSON.stringify(arr)
+				let param = {
+					uid: this.uid,
+					id: obj
+				}
+				helper.request(helper.websiteUrl + 'v1/disableExcel', param, 'POST', true, res => {
+					this.status = 'loading';
+					this.getlist('');
+				})
+			},
+			// 停用
+			stopUse(index, name) {
+				this.stopshow = true;
+				this.stopIndex = index;
+				this.Title = name;
+			},
+			stopconfirm() {
+				this.list[this.stopIndex].used = '1';
+				let arr = [this.list[this.stopIndex].id]
+				let obj = JSON.stringify(arr)
+				let param = {
+					uid: this.uid,
+					id: obj
+				}
+				helper.request(helper.websiteUrl + 'v1/enableExcel', param, 'POST', true, res => {
+					this.status = 'loading';
+					this.getlist('');
+					this.stopshow = false;
+				})
+			},
+			//删除
+			del(index, name) {
+				this.delshow = true;
+				this.delIndex = index;
+				this.Title = this.list[index].new_name;
+			},
+			delconfirm() {
+				let arr = [this.list[this.delIndex].id]
+				let obj = JSON.stringify(arr)
+				let param = {
+					uid: this.uid,
+					id: obj
+				}
+				helper.request(helper.websiteUrl + 'v1/deleteExcel', param, 'POST', true, res => {
+					this.status = 'loading';
+					this.getlist('');
+					this.delshow = false;
+				})
+			},
+			//下发弹框
+			// 人员
+			openPerson() {
+				this.showPersonList = true;
+			},
+			personSheetCallback(index) {
+				this.person = this.personSheetList[index].text;
+				this.personId = this.personSheetList[index].id;
+			},
+			//查看数据人员点击添加按钮
+			addPerson() {
+				if (this.personList.length == 0) {
+					this.personList.push({
+						name: this.person,
+						id: this.personId
+					})
+				} else {
+					this.personList.map(e => {
+						if (e.name != this.person) {
+							this.personList.push({
+								name: this.person,
+								id: this.personId
+							})
+						} else {
+							this.$refs.uToast.show({
+								title: '无需重复添加',
+								type: 'warning'
+							})
+							return false;
+						}
+					})
+				}
+			},
+			delPerson(index) {
+				this.personList.splice(index, 1)
+			},
+			// 选中任一checkbox时，由checkbox-group触发
+			checkboxGroupChange(e) {
+				this.hasList = [];
+				e.map(item => {
+					this.checkList.forEach(val => {
+						if (val.id == item) {
+							this.hasList.push({
+								name: val.name,
+								id: item
+							});
+						}
+					})
+				})
+				if (e.length == this.checkList.length) {
+					this.listchoose = true;
+				} else {
+					this.listchoose = false;
+				}
+			},
+			// 全选
+			checkedAllList() {
+				this.hasList = [];
+				if (this.listchoose == true) {
+					this.checkList.map(val => {
+						val.checked = true;
+						this.hasList.push({
+							name: val.name,
+							id: val.id
+						})
+					})
+				} else {
+					this.checkList.map((val, index) => {
+						val.checked = false;
+						this.hasList.splice(index, 1)
+					})
+				}
+			},
+			delChecklist(index) {
+				let id = this.hasList[index].id
+				this.hasList.splice(index, 1)
+				this.checkList.forEach(item => {
+					if (item.id == id) {
+						item.checked = false
+					}
+				})
+			},
+			//标准关联
+			openRelevance() {
+				this.showRelevanceList = true;
+			},
+			relevanceSheetCallback(index) {
+				this.relevance = this.relevanceSheetList[index].text;
+			},
+			addrelevance() {
+				if (this.addrelevanceList.length == 0) {
+					this.addrelevanceList.push({
+						name: this.relevance
+					})
+				} else {
+					this.addrelevanceList.map(e => {
+						if (e.name != this.relevance) {
+							this.addrelevanceList.push({
+								name: this.relevance
+							})
+						} else {
+							this.$refs.uToast.show({
+								title: '无需重复添加',
+								type: 'warning'
+							})
+							return false;
+						}
+					})
+				}
+			},
+			deladdrelevance() {
+				this.addrelevanceList.splice(index, 1)
+			},
+			//确定下发按钮
+			sure() {
+				//allotFlag true下发操作
+				if (this.allotFlag) {
+					//allotFlag false编辑操作
+					if (this.allotIds.length == 0) {
+						console.log("单个下发")
+						//单个下发
+						let arr = [];
+						this.personList.forEach(item => {
+							arr.push(item.id)
+						})
+						this.hasList.forEach(item => {
+							arr.push(item.id)
+						})
+						let param = {
+							uid: this.uid,
+							user_id: JSON.stringify(arr),
+							id: this.allotId
+						}
+						helper.request(helper.websiteUrl + 'v1/allot', param, 'POST', true, res => {
+							this.status = 'loading';
+							this.getlist('');
+							this.cancel();
+						})
+					} else {
+						//批量下发
+						console.log("批量下发")
+						let arr = [];
+						this.personList.forEach(item => {
+							arr.push(item.id)
+						})
+						this.hasList.forEach(item => {
+							arr.push(item.id)
+						})
+						this.allotIds.forEach(item => {
+							let param = {
+								uid: this.uid,
+								user_id: JSON.stringify(arr),
+								id: item
+							}
+							helper.request(helper.websiteUrl + 'v1/allot', param, 'POST', true, res => {
+								this.status = 'loading';
+								this.getlist('');
+								this.cancel();
+							})
+						})
+					}
+
+				} else {
+					console.log("编辑操作")
+					//已下发
+					let arr = [];
+					this.personList.forEach(item => {
+						arr.push(item.id)
+					})
+					this.hasList.forEach(item => {
+						arr.push(item.id)
+					})
+					let param = {
+						uid: this.uid,
+						user_id: JSON.stringify(arr),
+						id: this.allotId
+					}
+					helper.request(helper.websiteUrl + 'v1/updateAllot', param, 'POST', true, res => {
+						this.status = 'loading';
+						this.getlist('');
+						this.cancel();
+					})
+
+				}
+			},
+			//取消下发按钮
+			cancel() {
+				this.showAllot = false;
+				this.personList = [];
+				this.hasList = []
+				this.checkList.forEach(item => {
+					item.checked = false
+				})
+				this.allotFlag = false
+				this.allotId = null
+				this.allotIds = []
+				this.all = false
+				this.list.forEach(item => {
+					item.checked = false
+				})
+				this.showCheck = false
+			},
+			checkboxChange() {},
+			close() {
+				this.showAllot = false;
+			},
+			newStandard() {
+				helper.request(helper.uploadFile + 'v1/uploadExcel', param, 'POST', true, res => {})
+			},
+			upload() {
+				helper.downloadTask(helper.websiteUrl + "v1/downloadTemplate")
+			},
+			//查询组长和专责列表
+			querySpecialtyAndGroup() {
+				let param = {
+					uid: this.uid
+				}
+				helper.request(helper.websiteUrl + 'v1/queryUserBySpecialty', param, 'POST', true, res => {
+					this.status = 'loading';
+					if (res != null) {
+						//组长列表
+						res.group.forEach(item => {
+							item.checked = false,
+								item.id = item.USER_ID,
+								item.job = '组长'
+							item.name = item.NAME
+						})
+						this.checkList = res.group
+						//专责列表
+						res.specialty.forEach(item => {
+							item.id = item.USER_ID,
+								item.text = item.NAME
+						})
+						this.personSheetList = res.specialty
+						//关联准则
+						res.excel.forEach(item => {
+							item.id = item.id,
+								item.text = item.new_name
+						})
+						this.relevanceSheetList = res.excel
+					}
+				})
+			},
+			//查询下发记录
+			queryAllot(id) {
+				let param = {
+					uid: this.uid,
+					id: id
+				}
+				helper.request(helper.websiteUrl + 'v1/queryAllot', param, 'POST', true, res => {
+					this.status = 'loading';
+					if (res.length != 0) {
+						//组长的集合
+						let group = [];
+						//专责的集合
+						let personSheetList = [];
+						//personList
+						res.forEach(val => {
+							this.checkList.forEach(item => {
+								if (item.id == val) {
+									group.push({
+										id: item.id,
+										name: item.name,
+									})
+									item.checked = true
+								}
+							})
+							this.personSheetList.forEach(item => {
+								if (item.id == val) {
+									personSheetList.push({
+										id: item.id,
+										name: item.text
+									})
+								}
+							})
+						})
+						this.personList = personSheetList
+						this.hasList = group
+					}
+				})
+			},
+			onUpload() {
+				let uid = this.uid;
+				let _this = this;
+				this.$refs.lFile.upload({
+					// #ifdef APP-PLUS
+					// nvue页面使用时请查阅nvue获取当前webview的api，当前示例为vue窗口
+					currentWebview: _this.$mp.page.$getAppWebview(),
+					// #endif
+					//非真实地址，记得更换,调试时ios有跨域，需要后端开启跨域并且接口地址不要使用http://localhost/
+					url: helper.websiteUrl + 'v1/uploadExcel',
+					//默认file,上传文件的key
+					name: 'file',
+					header: {},
+					data: uid,
+				});
+			},
+			onSuccess(res) {
+				let data = JSON.stringify(res)
+				uni.showToast({
+					title: data.data,
+					icon: 'none'
+				})
+				this.getlist('');
+			},
+		}
+	}
+</script>
+
+<style lang="less" scoped>
+	/deep/.u-content {
+		border-radius: 10rpx 0 0 10rpx !important;
+	}
+
+	.standard {
+		background: #F8F8F8;
+
+		.standard-top {
+			display: flex;
+			justify-content: space-around;
+			padding: 20rpx 30rpx;
+			background: #FFFFFF;
+
+			.action {
+				width: 30%;
+				background: #4abdb4;
+				border-radius: 10rpx;
+				color: #FFFFFF;
+				font-size: 30rpx;
+				text-align: center;
+				height: 60rpx;
+				line-height: 60rpx;
+			}
+		}
+
+		.subsearch {
+			padding: 20rpx 30rpx;
+			background: #FFFFFF;
+		}
+
+		.standard-content {
+			padding: 30rpx;
+			padding-bottom: 100rpx;
+
+			.part {
+				padding: 20rpx;
+				margin-bottom: 20rpx;
+				border-radius: 20rpx;
+				border: 2rpx solid #f6f6f6;
+				background: #FFFFFF;
+
+				.top-part {
+					display: flex;
+					justify-content: flex-start;
+					align-items: center;
+					margin: 10rpx 0;
+
+					.left {
+						display: flex;
+						margin-right: 20rpx;
+
+						.check {
+							width: 30px;
+							height: 100rpx;
+							line-height: 100rpx;
+						}
+
+						image {
+							width: 100rpx;
+							height: 100rpx;
+						}
+					}
+
+					.right {
+						width: 100%;
+						flex: 1;
+
+						.name {
+							width: 100%;
+							flex: 1;
+							font-size: 30rpx;
+							color: #333333;
+							overflow: hidden;
+							display: -webkit-box;
+							text-overflow: ellipsis;
+							-webkit-line-clamp: 2;
+							-webkit-box-orient: vertical;
+							line-height: 50rpx;
+						}
+
+						.detail {
+							width: 100%;
+							display: flex;
+							justify-content: space-between;
+							line-height: 50rpx;
+
+							.size {
+								font-size: 28rpx;
+								color: #606266;
+							}
+
+							.time {
+								font-size: 24rpx;
+								color: #999999;
+							}
+						}
+					}
+				}
+
+				.action-part {
+					display: flex;
+					justify-content: flex-end;
+					font-size: 28rpx;
+					border-top: 2rpx solid #f6f6f6;
+					padding-top: 30rpx;
+
+					.see {
+						width: 100rpx;
+						text-align: center;
+						border: 2rpx solid #2b85e4;
+						color: #2b85e4;
+						margin-right: 20rpx;
+						padding: 6rpx 0;
+						border-radius: 10rpx;
+					}
+
+					.allot {
+						width: 100rpx;
+						text-align: center;
+						border: 2rpx solid #18b566;
+						color: #18b566;
+						margin-right: 20rpx;
+						padding: 6rpx 0;
+						border-radius: 10rpx;
+					}
+
+					.del {
+						width: 100rpx;
+						text-align: center;
+						border: 2rpx solid #dd6161;
+						color: #dd6161;
+						margin-right: 20rpx;
+						padding: 6rpx 0;
+						border-radius: 10rpx;
+					}
+
+					.use {
+						width: 100rpx;
+						text-align: center;
+						border: 2rpx solid #ff9900;
+						color: #ff9900;
+						margin-right: 20rpx;
+						padding: 6rpx 0;
+						border-radius: 10rpx;
+					}
+
+					.gray {
+						border: 2rpx solid #999999;
+						color: #999999;
+					}
+
+					.green {
+						border: 2rpx solid #18b566;
+						color: #18b566;
+					}
+				}
+
+			}
+		}
+
+		.bottom {
+
+			position: fixed;
+			width: 100%;
+			background: #FFFFFF;
+			height: 100rpx;
+			line-height: 100rpx;
+			box-shadow: 0 -6rpx 10rpx rgba(0, 0, 0, 0.15);
+			bottom: 0;
+			z-index: 99;
+
+			.check-bottom {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 0 30rpx;
+
+				.left {
+					display: flex;
+					color: #2979ff;
+					font-size: 32rpx;
+
+				}
+
+				.right {
+					display: flex;
+					justify-content: flex-end;
+
+					.batch {
+
+						background: #19be6b;
+						color: #FFFFFF;
+						border-radius: 40rpx;
+						height: 60rpx;
+						line-height: 60rpx;
+						text-align: center;
+						margin-right: 20rpx;
+						padding: 0 20rpx;
+						box-shadow: 0 6rpx 6rpx #71d5a1;
+
+					}
+
+					.stop {
+						background: #ff9900;
+						margin: 20rpx 0;
+					}
+
+					.del {
+						background: #fa3534;
+						box-shadow: 0 6rpx 6rpx #fab6b6;
+					}
+				}
+			}
+
+		}
+
+		.model {
+			padding: 30rpx;
+
+			.rename {
+				margin: 20rpx 0;
+			}
+
+			.stop {
+				font-size: #333333;
+				line-height: 50rpx;
+				font-size: 32rpx;
+				margin: 20rpx 0;
+			}
+
+			.tips {
+				font-size: 28rpx;
+				color: #999999;
+			}
+		}
+
+		//下发
+		.roleModel {
+			width: 100%;
+			position: relative;
+			padding-top: 90rpx;
+			padding-bottom: 120rpx;
+
+
+			.roleTop {
+				height: 90rpx;
+				line-height: 90rpx;
+				background: #4abdb4;
+				color: #FFFFFF;
+				font-size: 34rpx;
+				text-align: center;
+				position: fixed;
+				top: 0rpx;
+				width: 100%;
+				z-index: 99;
+			}
+
+			.content {
+
+				padding: 30rpx;
+			}
+
+			.choose {
+				display: flex;
+				justify-content: flex-start;
+				align-items: center;
+				margin: 40rpx 0 20rpx;
+
+				.title {
+					color: #333333;
+					font-size: 30rpx;
+					margin-right: 10rpx;
+				}
+
+				.input_part {
+					margin-right: 10rpx;
+					width: 100%;
+					flex: 1;
+				}
+
+				.add {
+					width: 100rpx;
+					padding: 0 10rpx;
+					height: 70rpx;
+					line-height: 70rpx;
+					font-size: 30rpx;
+					border: 2rpx solid #dcdfe6;
+					border-radius: 10rpx;
+					color: #4abdb4;
+					text-align: center;
+				}
+			}
+
+			.hasChoosed {
+				border: 2rpx solid #f6f6f6;
+				padding: 20rpx;
+				margin: 20rpx 0;
+				border-radius: 20rpx;
+
+				width: 100%;
+
+				.has {
+					display: inline-flex;
+					justify-content: space-between;
+					align-items: center;
+					text-align: center;
+					background: #F8F8F8;
+					width: 25%;
+					padding: 10rpx;
+					border-radius: 10rpx;
+					margin: 10rpx;
+
+					.name {
+
+						font-size: 28rpx;
+					}
+
+					.icon {
+						margin-left: 10rpx;
+					}
+				}
+			}
+
+			.range {
+				margin: 20rpx 0;
+
+				.title {
+					font-size: 32rpx;
+					color: #333333;
+					text-align: center;
+					width: 100%;
+					height: 80rpx;
+					line-height: 80rpx;
+				}
+
+				.part {
+					display: flex;
+					justify-content: space-between;
+
+					.left {
+						border: 2rpx solid #f6f6f6;
+						width: 50%;
+
+						.top {
+							display: flex;
+							justify-content: space-between;
+							align-items: center;
+							font-size: 30rpx;
+							color: #333333;
+							padding: 10rpx 20rpx;
+						}
+
+						.list {
+							padding: 10rpx 20rpx;
+
+							/deep/.u-checkbox {
+								border-bottom: 2rpx solid #f6f6f6;
+							}
+
+							.job {
+								color: #007AFF;
+								margin-right: 10rpx;
+
+							}
+
+							text {
+								font-size: 28rpx;
+								color: #606266;
+
+							}
+						}
+					}
+
+					.right {
+						width: 40%;
+						border: 2rpx solid #f6f6f6;
+
+						.top {
+							font-size: 30rpx;
+							color: #4abdb4;
+							padding: 10rpx 20rpx;
+						}
+
+						.list {
+							padding: 10rpx 20rpx;
+
+							.has {
+								display: flex;
+								background: #f6f6f6;
+								padding: 10rpx;
+								justify-content: space-between;
+								align-items: center;
+								border-radius: 10rpx;
+								margin-top: 10rpx;
+
+								.name {
+									font-size: 28rpx;
+								}
+
+								.icon {
+									margin: 0 10rpx;
+								}
+							}
+						}
+					}
+				}
+			}
+
+			.roleAction {
+				position: fixed;
+				bottom: 0;
+				height: 100rpx;
+				line-height: 100rpx;
+				display: flex;
+				justify-content: space-around;
+				font-size: 32rpx;
+				width: 100%;
+				background: #FFFFFF;
+
+				.cancel {
+					width: 40%;
+					border: 2rpx solid #dedede;
+					color: #606266;
+					text-align: center;
+					height: 80rpx;
+					line-height: 80rpx;
+					border-radius: 80rpx;
+				}
+
+				.sure {
+					width: 40%;
+					color: #FFFFFF;
+					background: #4abdb4;
+					text-align: center;
+					height: 80rpx;
+					line-height: 80rpx;
+					border: 2rpx solid #4abdb4;
+					border-radius: 80rpx;
+				}
+			}
+		}
+
+
+	}
+</style>

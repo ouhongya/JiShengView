@@ -1,0 +1,18 @@
+{
+  "navigationBarTitleText": "首页",
+  "onReachBottomDistance": 50,
+  "enablePullDownRefresh": false,
+  "usingComponents": {
+    "u-sticky": "/uview-ui/components/u-sticky/u-sticky",
+    "u-grid": "/uview-ui/components/u-grid/u-grid",
+    "u-grid-item": "/uview-ui/components/u-grid-item/u-grid-item",
+    "u-badge": "/uview-ui/components/u-badge/u-badge",
+    "statistics": "/components/statistics/statistics",
+    "question": "/components/question/question",
+    "standard": "/components/standard/standard",
+    "schedule": "/components/schedule/schedule",
+    "application": "/components/application/application",
+    "setting": "/components/setting/setting",
+    "checktask": "/components/checktask/checktask"
+  }
+}

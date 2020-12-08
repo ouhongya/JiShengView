@@ -1,0 +1,800 @@
+<template>
+	<view class="setting">
+		<u-subsection :list="sublist" :current="curNow" @change="sectionChange" bg-color="#a5deda" button-color="#6ecac3"
+		 active-color="#fff" height="80" inactive-color="#fff"></u-subsection>
+		<view class="subpart" v-if="subIndex==0">
+			<!-- 账户 -->
+			<!-- 搜索 -->
+			<view class="subtop">
+				<view class="subsearch">
+					<u-search placeholder="请输入姓名" v-model="accountName" shape="square" :action-style="actionStyle" border-color='#4abdb4'
+					 bg-color="#ffffff" @search="searchAccount()" @custom="searchAccount()"></u-search>
+				</view>
+				<view class="subnew">
+					<view class="new" @click="handleAccount('')">
+						新增
+					</view>
+				</view>
+			</view>
+
+			<!-- 表单 -->
+			<view class="table-part">
+				<u-table border-color="#6ecac3">
+					<u-tr class="u-tr">
+						<u-th class="u-th" width="20%">姓名</u-th>
+						<u-th class="u-th" width="20%">角色</u-th>
+						<u-th class="u-th" width="30%">电话</u-th>
+						<u-th class="u-th">操作</u-th>
+					</u-tr>
+					<u-tr class="u-tr" v-for="i in 6">
+						<u-td class="u-td" width="20%">张三</u-td>
+						<u-td class="u-td" width="20%">组长</u-td>
+						<u-td class="u-td" width="30%">15625258525</u-td>
+						<u-td class="u-td">
+							<view class="action-part">
+								<view class="edit" @click="handleAccount('item')">编辑</view>
+								<view class="del" @click="delAccount()">删除</view>
+							</view>
+						</u-td>
+					</u-tr>
+				</u-table>
+
+			</view>
+			<!-- 新增或编辑账户弹框 -->
+			<u-popup v-model="showAccount" mode="bottom" height="80%">
+				<view class="roleModel">
+					<view class="roleTop">
+						{{accountTopName}}
+					</view>
+					<view class="right" v-if="accountType" @click="addAccount()">
+						批量导入
+					</view>
+					<view v-for="(item,index) in accountList" class="part">
+						<view class="rolePart">
+							<view class="name">
+								姓名
+							</view>
+							<view class="content">
+								<view class="limit">
+									<u-input v-model="item.name" type="text" :border="true" height="70" placeholder="请输入姓名" />
+								</view>
+							</view>
+						</view>
+						<view class="rolePart">
+							<view class="name">
+								手机
+							</view>
+							<view class="content">
+								<view class="limit">
+									<u-input v-model="item.phone" type="text" :border="true" height="70" placeholder="请输入手机号码" />
+								</view>
+							</view>
+						</view>
+						<view class="rolePart">
+							<view class="name">
+								角色
+							</view>
+							<view class="content">
+								<select v-model="item.function" :label-in-value="true" class="selectType">
+									<option v-for="(item,index) in selectTypeLists" :key="index" :value="item.value">{{item.name}}</option>
+								</select>
+							</view>
+						</view>
+					</view>
+					<view class="roleAction">
+						<view class="cancel" @click="cancelAccount()">
+							取消
+						</view>
+						<view class="sure" @click="sureAccount(accountType)">
+							确定
+						</view>
+					</view>
+				</view>
+			</u-popup>
+
+
+			<!-- 删除账户弹框 -->
+			<u-modal v-model="showAccountdel" @confirm="accountdel" content="您确认要删除吗？" :show-title="false" :show-cancel-button="true"
+			 :confirm-style="{'color':'#fa3534'}"></u-modal>
+
+		</view>
+		<view class="subpart" v-if="subIndex==1">
+			<!-- 角色 -->
+			<!-- 搜索 -->
+			<view class="subtop">
+				<view class="subsearch">
+					<u-search placeholder="请输入角色名称" v-model="roleName" shape="square" :action-style="actionStyle" border-color='#4abdb4'
+					 bg-color="#ffffff" @search="searchRole()" @custom="searchRole()"></u-search>
+				</view>
+				<view class="subnew">
+					<view class="new" @click="newORedit('')">
+						新增
+					</view>
+				</view>
+			</view>
+
+			<!-- 表单 -->
+			<view class="table-part">
+				<u-table border-color="#6ecac3">
+					<u-tr class="u-tr">
+						<u-th class="u-th" width="30%">角色</u-th>
+						<u-th class="u-th" width="30%">菜单权限</u-th>
+						<u-th class="u-th">操作</u-th>
+					</u-tr>
+					<u-tr class="u-tr" v-for="(item,index) in List">
+						<u-td class="u-td" width="30%">{{item.roleName}}</u-td>
+						<u-td class="u-td" width="30%">
+							<view class="" v-for="role in item.roleList">{{role.name}}</view>
+						</u-td>
+						<u-td class="u-td">
+							<view class="action-part">
+								<view class="see" @click="see(item)">查看</view>
+								<view class="edit" @click="newORedit(item)">编辑</view>
+								<view class="del" @click="del(index)">删除</view>
+							</view>
+						</u-td>
+					</u-tr>
+				</u-table>
+
+			</view>
+			<!-- 新增或编辑角色弹框 -->
+			<u-popup v-model="showRole" mode="bottom" height="80%">
+				<view class="roleModel">
+					<view class="roleTop">
+						{{roleTopName}}
+					</view>
+					<view class="rolePart" v-if="roleType">
+						<view class="name">
+							角色名称
+						</view>
+						<view class="content">
+							<view class="limit">
+								<u-input v-model="roleform.name" type="text" :border="true" height="70" />
+							</view>
+						</view>
+					</view>
+					<view class="rolePart">
+						<view class="name">
+							角色职能
+						</view>
+						<view class="content">
+							<view v-if="roleType">
+								<select v-model="roleform.roleFunction" :label-in-value="true" class="selectType" ref="addRequestState">
+									<option v-for="(item,index) in selectTypeLists" :key="index" :value="item.value">{{item.name}}</option>
+								</select>
+							</view>
+
+							<view class="limit" v-else>
+								<u-input v-model="roleform.roleFunction" type="text" :border="true" height="70" disabled class="gray" />
+							</view>
+						</view>
+					</view>
+					<view class="rolePart column">
+						<view class="name">
+							角色权限
+						</view>
+						<view class="content">
+							<u-checkbox-group width='50%'>
+								<u-checkbox v-model="item.checked" v-for="(item, index) in checkboxList" :key="index" :name="item.name"
+								 active-color="#4abdb4">
+									{{ item.name }}
+								</u-checkbox>
+							</u-checkbox-group>
+						</view>
+
+					</view>
+					<view class="roleAction">
+						<view class="cancel" @click="cancelRole()">
+							取消
+						</view>
+						<view class="sure" @click="sureRole(roleType)">
+							确定
+						</view>
+					</view>
+				</view>
+			</u-popup>
+
+			<!-- 查看角色弹框 -->
+			<u-popup v-model="seeRole" mode="bottom" height="80%">
+				<view class="roleModel">
+					<view class="roleTop">
+						详情
+					</view>
+					<view class="roletablePart">
+						<u-table border-color="#6ecac3" class="roleTable">
+							<u-tr class="u-tr">
+								<u-th class="u-th left">角色</u-th>
+								<u-th class="u-th">人员列表</u-th>
+							</u-tr>
+							<u-tr class="u-tr">
+								<u-td class="u-td left">检查员</u-td>
+								<u-td class="u-td">
+									<view class="person" v-for="i in 10">
+										张三
+									</view>
+								</u-td>
+							</u-tr>
+						</u-table>
+					</view>
+				</view>
+			</u-popup>
+
+			<!-- 删除角色弹框 -->
+			<u-modal v-model="showRoledel" @confirm="roledel" content="您确认要删除吗？" :show-title="false" :show-cancel-button="true"
+			 :confirm-style="{'color':'#fa3534'}"></u-modal>
+		</view>
+		<view class="subpart" v-if="subIndex==2">
+			<!-- 字段配置 -->
+			<!-- 搜索 -->
+			<view class="subtop">
+				<view class="subsearch">
+					<u-search placeholder="请输入公司名称" v-model="fieldsName" shape="square" :action-style="actionStyle" border-color='#4abdb4'
+					 bg-color="#ffffff" @search="searchFields()" @custom="searchFields()"></u-search>
+				</view>
+				<view class="subnew">
+					<view class="new" @click="handleFields('')">
+						新增
+					</view>
+				</view>
+			</view>
+		</view>
+		<view class="subpart" v-if="subIndex==3">
+			节点配置
+		</view>
+		<!-- 分页加载 -->
+		<u-loadmore bg-color="none" :status="status" :icon-type="iconType" margin-bottom="60" :load-text="loadText" />
+	</view>
+</template>
+
+<script>
+	export default {
+		data() {
+			return {
+				// 头部导航
+				curNow: 0, //当前选中
+				subIndex: 0, //当前选中内容
+				sublist: [{
+						name: '账户'
+					},
+					{
+						name: '角色'
+					},
+					{
+						name: '字段配置'
+					},
+					{
+						name: '节点配置'
+					}
+				],
+				actionStyle: {
+					backgroundColor: '#4abdb4',
+					color: '#fff',
+					margin: '0',
+					width: '100rpx',
+					height: '68rpx',
+					lineHeight: '68rpx',
+					borderRadius: '0 10rpx 10rpx 0'
+				},
+				// 账户部分start
+				accountName: '',
+				showAccount: false,
+				accountTopName: '新增账户',
+				accountType: false,
+				accountList: [{
+					name: '',
+					phone: '',
+					function: ''
+				}],
+				showAccountdel: false,
+
+
+
+
+				// 角色部分start
+				//搜索
+				roleName: '',
+				//操作数据
+				showRole: false,
+				roleTopName: '新增角色',
+				roleType: true,
+				roleform: {
+					name: '',
+					roleFunction: '',
+					rolecheckList: []
+				},
+				seeRole: false,
+				showRoledel: false,
+				selectTypeLists: [{
+						value: "0",
+						name: '检查员1'
+					},
+					{
+						value: "1",
+						name: '检查员2'
+					},
+					{
+						value: "2",
+						name: '检查员5'
+					},
+					{
+						value: "3",
+						name: '检查员3'
+					},
+					{
+						value: "4",
+						name: '检查员4'
+					},
+				],
+
+
+				checkboxList: [{
+						name: '图表统计',
+						checked: false,
+						disabled: false
+					},
+					{
+						name: '应用中心',
+						checked: false,
+						disabled: false
+					},
+					{
+						name: '问题列表',
+						checked: false,
+						disabled: false
+					},
+					{
+						name: '系统配置',
+						checked: false,
+						disabled: false
+					},
+					{
+						name: '验收检查',
+						checked: false,
+						disabled: false
+					},
+					{
+						name: '标准模板',
+						checked: false,
+						disabled: false
+					},
+					{
+						name: '待办事项',
+						checked: false,
+						disabled: false
+					}
+
+				],
+				//表单数据
+				List: [{
+						roleName: '检查员',
+						roleList: [{
+								name: '1111'
+
+							},
+							{
+								name: '222'
+
+							},
+							{
+								name: '3333'
+
+							},
+						]
+					},
+					{
+						roleName: '检查员1',
+						roleList: [{
+								name: '1111'
+
+							},
+							{
+								name: '222'
+
+							}
+
+						]
+					},
+					{
+						roleName: '检查员2',
+						roleList: [{
+								name: '1111'
+
+							},
+							{
+								name: '222'
+
+							},
+							{
+								name: '3333'
+
+							},
+							{
+								name: '4444'
+
+							},
+						]
+					},
+					{
+						roleName: '检查员3',
+						roleList: [{
+							name: '1111'
+
+						}]
+					},
+				],
+				// 角色部分end
+				
+				// 字段配置部分start
+				fieldsName:'',
+				// 字段配置部分end
+
+
+				//分页
+				pages: 1,
+				pageNum: 1,
+				pageSize: 5,
+				status: 'loading',
+				iconType: 'flower',
+				loadText: {
+					loadmore: '上拉加载更多',
+					loading: '正在加载...',
+					nomore: '我也是有底线的'
+				},
+			}
+		},
+		created() {
+			this.init()
+			this.roleform.roleFunction = this.selectTypeLists[0].value; //角色职能默认选中
+		},
+		methods: {
+			//导航切换
+			sectionChange(index) {
+				this.curNow = index;
+				this.subIndex = index;
+			},
+			//初始化请求数据
+			init() {
+				if (this.pageNum > 1) {
+					this.List = this.List.concat(this.List);
+				} else {
+					this.List = this.List;
+				}
+
+				uni.stopPullDownRefresh();
+				// this.pages = r.pages;
+				this.pageNum++;
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+				}
+			},
+			// 上拉加载
+			onreachBottom(e) {
+				if (this.pageNum > this.page) {
+					this.status = "nomore"
+					return
+				}
+				this.init()
+
+			},
+			//账户部分start
+			searchAccount() {
+				console.log(this.accountName, 'accountName')
+			},
+			//批量导入
+			addAccount() {
+				this.accountList = this.accountList.concat(this.accountList)
+			},
+			//新增或编辑账户
+			handleAccount(item) {
+				if (item == '') {
+					// 新增
+					this.showAccount = true;
+					this.accountTopName = '新增账户';
+					this.accountType = true;
+				} else {
+					// 编辑
+					this.showAccount = true;
+					this.accountTopName = '编辑账户';
+					this.accountType = false;
+				}
+			},
+
+			//确认新增或编辑角色
+			sureAccount(type) {
+
+				if (type == true) {
+					//新增
+
+					this.showAccount = false;
+				} else {
+					//编辑
+
+					this.showAccount = false;
+				}
+
+			},
+			//取消新增或编辑角色
+			cancelAccount() {
+				this.showAccount = false;
+			},
+			//删除弹框
+			delAccount() {
+				this.showAccountdel = true;
+			},
+			//确认删除
+			accountdel() {
+				this.showAccountdel = false;
+			},
+			//账户部分end			
+
+
+			// 角色部分start
+			//搜索
+			searchRole() {
+				console.log(this.roleName, 'roleName')
+			},
+			//新增或编辑角色
+			newORedit(item) {
+				if (item == '') {
+					// 新增
+					this.showRole = true;
+					this.roleTopName = '新增角色';
+					this.roleType = true;
+				} else {
+					// 编辑
+					this.showRole = true;
+					this.roleTopName = '编辑角色';
+					this.roleType = false;
+				}
+			},
+
+			//确认新增或编辑角色
+			sureRole(type) {
+
+				if (type == true) {
+					//新增
+
+					this.showRole = false;
+				} else {
+					//编辑
+
+					this.showRole = false;
+				}
+
+			},
+			//取消新增或编辑角色
+			cancelRole() {
+				this.showRole = false;
+			},
+			//查看角色
+			see() {
+				this.seeRole = true;
+			},
+			//删除弹框
+			del() {
+				this.showRoledel = true;
+			},
+			//确认删除
+			roledel() {
+				this.showRoledel = false;
+			},
+			// 角色部分end
+			
+			// 字段配置部分start
+			//搜索
+			searchFields() {
+				console.log(this.fieldsName, 'fieldsName')
+			},
+			// 字段配置部分end
+
+		}
+	}
+</script>
+
+<style lang="less" scoped>
+	/deep/.u-content {
+		border-radius: 10rpx 0 0 10rpx !important;
+	}
+
+	/deep/.u-item {
+		height: 100%;
+		padding: 0;
+	}
+
+	/deep/.u-item-bg {
+		height: 100%;
+		border-radius: 0;
+		bottom: 0;
+	}
+
+	/deep/.u-subsection {
+		padding: 0 !important;
+		border-radius: 0 !important;
+	}
+
+	.setting {
+		.u-th {
+			background-color: #6ecac3;
+			color: #FFFFFF;
+			padding: 10rpx 0 !important;
+		}
+
+		.subpart {
+			padding: 0 30rpx;
+
+			.subtop {
+				display: flex;
+				justify-content: space-between;
+				margin: 30rpx 0;
+
+				.subsearch {
+					width: 80%;
+				}
+
+				.subnew {
+					.new {
+						background-color: #4abdb4;
+						color: #FFFFFF;
+						height: 68rpx;
+						line-height: 68rpx;
+						border-radius: 10rpx;
+						width: 120rpx;
+						text-align: center;
+						font-size: 28rpx;
+					}
+				}
+			}
+		}
+
+		.table-part {
+			margin-bottom: 60rpx;
+			.action-part {
+				display: flex;
+				justify-content: space-around;
+
+				.see,
+				.edit {
+					color: #2979ff;
+				}
+
+				.del {
+					color: #fa3534;
+				}
+			}
+		}
+	}
+
+	//新增或编辑角色弹框
+	.roleModel {
+		width: 100%;
+		position: relative;
+		padding-top: 90rpx;
+		padding-bottom: 120rpx;
+
+
+		.roleTop {
+			height: 90rpx;
+			line-height: 90rpx;
+			background: #4abdb4;
+			color: #FFFFFF;
+			font-size: 34rpx;
+			text-align: center;
+			position: fixed;
+			top: 0rpx;
+			width: 100%;
+			z-index: 999;
+		}
+
+		.right {
+			position: fixed;
+			top: 0rpx;
+			right: 0;
+			width: 150rpx;
+			height: 90rpx;
+			color: #FFFFFF;
+			line-height: 90rpx;
+			font-size: 30rpx;
+			z-index: 999;
+		}
+
+		.part {
+			margin: 20rpx;
+			border-radius: 20rpx;
+			border: 2rpx solid #f6f6f6;
+
+		}
+
+
+		.rolePart {
+			padding: 0 30rpx;
+			display: flex;
+			height: 100rpx;
+			line-height: 100rpx;
+			justify-content: flex-start;
+			align-items: center;
+			margin: 30rpx;
+
+			.name {
+				font-size: 30rpx;
+				margin-right: 20rpx;
+				color: #333333;
+			}
+
+			.content {
+				.selectType {
+					border: 2rpx solid #dcdfe6;
+					height: 70rpx;
+					line-height: 70rpx;
+					color: #303133;
+					width: 350rpx;
+				}
+
+				.limit {
+					height: 70rpx;
+					line-height: 70rpx;
+
+					.gray {
+						background: #f6f6f6;
+					}
+				}
+			}
+
+		}
+
+		.roletablePart {
+			padding: 60rpx;
+
+			.roleTable {
+				.person {
+					padding: 10rpx;
+				}
+			}
+
+
+		}
+
+		.column {
+			display: block;
+
+			.content {
+
+				background: #f6fff9;
+				border-radius: 20rpx;
+				padding: 0 60rpx 30rpx 60rpx;
+			}
+
+		}
+
+		.roleAction {
+			position: fixed;
+			bottom: 0;
+			height: 100rpx;
+			line-height: 100rpx;
+			display: flex;
+			justify-content: space-around;
+			font-size: 32rpx;
+			width: 100%;
+
+			.cancel {
+				width: 40%;
+				border: 2rpx solid #dedede;
+				color: #606266;
+				text-align: center;
+				height: 80rpx;
+				line-height: 80rpx;
+				border-radius: 80rpx;
+			}
+
+			.sure {
+				width: 40%;
+				color: #FFFFFF;
+				background: #4abdb4;
+				text-align: center;
+				height: 80rpx;
+				line-height: 80rpx;
+				border: 2rpx solid #4abdb4;
+				border-radius: 80rpx;
+			}
+		}
+	}
+</style>

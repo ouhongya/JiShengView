@@ -1,0 +1,23 @@
+<template>
+	<view class="">
+		这里是标准模板
+		
+	</view>
+</template>
+
+<script>
+	export default {
+		data() {
+			return {
+				
+			}
+		},
+		methods: {
+		
+		}
+	}
+</script>
+
+<style>
+
+</style>

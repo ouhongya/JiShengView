@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "登录",
+  "usingComponents": {
+    "u-input": "/uview-ui/components/u-input/u-input",
+    "u-count-down": "/uview-ui/components/u-count-down/u-count-down"
+  }
+}

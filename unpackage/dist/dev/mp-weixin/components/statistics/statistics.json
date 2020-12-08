@@ -1,0 +1,15 @@
+{
+  "component": true,
+  "usingComponents": {
+    "u-sticky": "/uview-ui/components/u-sticky/u-sticky",
+    "u-input": "/uview-ui/components/u-input/u-input",
+    "u-popup": "/uview-ui/components/u-popup/u-popup",
+    "u-checkbox-group": "/uview-ui/components/u-checkbox-group/u-checkbox-group",
+    "u-checkbox": "/uview-ui/components/u-checkbox/u-checkbox",
+    "u-loadmore": "/uview-ui/components/u-loadmore/u-loadmore",
+    "u-table": "/uview-ui/components/u-table/u-table",
+    "u-tr": "/uview-ui/components/u-tr/u-tr",
+    "u-th": "/uview-ui/components/u-th/u-th",
+    "u-td": "/uview-ui/components/u-td/u-td"
+  }
+}

@@ -1,0 +1,61 @@
+<script>
+	export default {
+		onLaunch: function() {
+			console.log('App Launch')
+			let hasLogin=uni.getStorageSync("hasLogin");
+			if(hasLogin){
+
+			uni.navigateTo({
+				url: 'pages/index/index'
+			});
+			}
+	
+		},
+		onShow: function() {
+			console.log('App Show')
+		},
+		onHide: function() {
+			console.log('App Hide')
+		},
+		methods: {
+			getPhoneHeight() {
+				let that = this
+				var Height = '1';
+				uni.getSystemInfo({
+					success: function(res) {
+						Height = res.statusBarHeight
+		
+					}
+				})
+				return Height
+			},
+		}
+	}
+</script>
+
+<style lang="less">
+	/*每个页面公共css */
+	// 时间展示
+	/deep/.u-calendar__action {
+		display: flex;
+		justify-content: center;
+	}
+	/deep/.u-input {
+		align-items: center;
+	}
+	// 空状态
+	.empty{
+		width: 100%;
+		text-align: center;
+		margin: 60rpx 0;
+		image{
+			width: 180rpx;
+			height: 120rpx;
+		}
+		.empty-tips{
+			color: #bfbfbf;
+			margin-top: 10rpx;
+			font-size: 28rpx;
+		}
+	}
+</style>
