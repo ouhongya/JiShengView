@@ -1,0 +1,94 @@
+
+.data-v-26ebdfe4 .u-th {
+  font-size: 24rpx !important;
+}
+.Model .toptitle.data-v-26ebdfe4 {
+  height: 90rpx;
+  line-height: 90rpx;
+  background: #4abdb4;
+  color: #FFFFFF;
+  font-size: 34rpx;
+  text-align: center;
+  position: fixed;
+  top: 0rpx;
+  width: 100%;
+  z-index: 999;
+}
+.Model .all.data-v-26ebdfe4 {
+  margin-top: 100rpx;
+  padding: 0 30rpx;
+}
+.Model .part.data-v-26ebdfe4 {
+  margin-left: 50rpx;
+  padding: 0 30rpx;
+}
+.charts.data-v-26ebdfe4 {
+  width: 100%;
+  height: 500rpx;
+  background-color: #FFFFFF;
+}
+.charts1.data-v-26ebdfe4 {
+  width: 100%;
+  height: 400rpx;
+  background-color: #FFFFFF;
+}
+.statistics.data-v-26ebdfe4 {
+  position: relative;
+  background: #FFFFFF;
+  padding-bottom: 100rpx;
+}
+.statistics .condition.data-v-26ebdfe4 {
+  height: 100rpx;
+  line-height: 100rpx;
+  background: #f6fff9;
+  width: 100%;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-box-pack: justify;
+  -webkit-justify-content: space-between;
+          justify-content: space-between;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+          align-items: center;
+  border-bottom: 2rpx solid #f6f6f6;
+}
+.statistics .condition .search-part.data-v-26ebdfe4 {
+  width: 30%;
+  margin: 0 2%;
+}
+.statistics .condition .search-part .limit.data-v-26ebdfe4 {
+  height: 70rpx;
+  line-height: 70rpx;
+  color: #303133;
+  width: 100%;
+  font-size: 30rpx;
+}
+.statistics .table-part.data-v-26ebdfe4 {
+  padding: 30rpx;
+}
+.statistics .table-title.data-v-26ebdfe4 {
+  margin: 20rpx 0;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+          align-items: center;
+}
+.statistics .table-title .line.data-v-26ebdfe4 {
+  width: 12rpx;
+  height: 40rpx;
+  line-height: 40rpx;
+  -webkit-border-radius: 10rpx;
+          border-radius: 10rpx;
+  background: #909399;
+  margin-right: 10rpx;
+}
+.statistics .table-title .txt.data-v-26ebdfe4 {
+  font-size: 30rpx;
+  color: #666666;
+  height: 50rpx;
+  line-height: 50rpx;
+}
+

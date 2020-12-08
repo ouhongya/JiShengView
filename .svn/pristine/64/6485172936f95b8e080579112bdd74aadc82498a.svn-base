@@ -1,0 +1,492 @@
+<template>
+	<view class="taskdetail">
+		<a-head bgColor='#4abdb4' :text="taskhead"></a-head>
+		<u-sticky :offset-top="0">
+			<view class="table-top">
+				<u-table bg-color="#afdcd8">
+					<u-tr>
+						<u-td width="10%">序号</u-td>
+						<u-td width="30%">状态</u-td>
+						<u-td width="20%">子准则</u-td>
+						<u-td width="30%">检查模块</u-td>
+						<u-td width="10%">分值</u-td>
+					</u-tr>
+				</u-table>
+			</view>
+
+		</u-sticky>
+		<view class="table-part" >
+			<u-table v-for="(item,index) in list">
+				<u-tr>
+					<u-td width="10%">
+						<view @click="open(index)">{{index+1}}</view>
+					</u-td>
+
+					<u-td width="30%">
+						<view @click="open(index)">
+							<view class="state grey" v-if="item.state==0">
+								未开始
+							</view>
+							<view class="state yellow" v-if="item.state==1">
+								检查中
+							</view>
+							<view class="state green" v-if="item.state==2">
+								已完成
+							</view>
+
+							<view class="detail" v-if="item.state!=0">
+								<view class="title">
+									进度:<text class="txt">
+										{{item.prograss}}
+									</text>
+								</view>
+								<view class="title">
+									问题数:<text class="red">
+										{{item.problem}}
+									</text>
+								</view>
+								<view class="title">
+									扣分:<text class="red">
+										-{{item.lostgrade}}
+									</text>
+								</view>
+								<view class="title">
+									得分:<text class="txt">
+										{{item.gotgrade}}
+									</text>
+								</view>
+
+							</view>
+						</view>
+					</u-td>
+					<u-td width="20%">
+						<view @click="open(index)">{{item.childname}}</view>
+					</u-td>
+					<u-td width="30%">
+						<view @click="open(index)">{{item.detail}}</view>
+					</u-td>
+					<u-td width="10%">
+						<view @click="open(index)">{{item.totalgrade}}</view>
+					</u-td>
+
+
+				</u-tr>
+				<view class="scorll-content" v-if="item.show&&item.tableList.length>0">
+					<scroll-view class="scroll-view_H" scroll-x="true" @scroll="scroll" scroll-left="120">
+						<view class="top">
+							<view class="scorll-th">
+								<view class="srorll-title">
+									评判项目
+
+								</view>
+							</view>
+							<view class="scorll-th">
+								<view class="srorll-title">
+									评判内容
+								</view>
+							</view>
+							<view class="scorll-th detail">
+								<view class="srorll-title">
+									检查方式
+								</view>
+							</view>
+							<view class="scorll-th detail">
+								<view class="srorll-title">
+									评分项
+								</view>
+							</view>
+
+							<view class="scorll-th">
+								<view class="srorll-title">
+									总分
+								</view>
+							</view>
+							<view class="scorll-th">
+								<view class="srorll-title">
+									得分
+								</view>
+							</view>
+							<view class="scorll-th">
+								<view class="srorll-title">
+									完成检查
+								</view>
+							</view>
+						</view>
+						<view v-for="(i,index1) in  item.tableList" :key="index1">
+							<view class="scorll-th">
+								<view class="scorll-td">
+									<view class="content">
+										{{i.project}}
+									</view>
+								</view>
+							</view>
+							<view class="scorll-th">
+								<view class="scorll-td">
+									<view class="content">
+										{{i.content}}
+									</view>
+								</view>
+							</view>
+							<view class="scorll-th detail">
+								<view class="scorll-td">
+									<view class="content">
+										<view class="way-part">
+											<view class="wayname">
+												检查方式：
+												<view class="name">
+													{{i.taskway}}
+												</view>
+											</view>
+											<view class="wayname">
+												必要资料：
+												<view class="name">
+													{{i.necessity}}
+												</view>
+											</view>
+										</view>
+									</view>
+								</view>
+							</view>
+							<view class="scorll-th detail">
+								<view class="scorll-td">
+									<view class="content" @click="todetail(i.scoreList)">
+										<view class="score-part" v-for="(j,index2) in i.scoreList">
+											<view class="scorename">
+												{{index2+1}}.{{j.scorename}}
+											</view>
+											<view class="score" :class="j.score>0?'normal':'red'">
+												{{j.score}}
+											</view>
+										</view>
+									</view>
+								</view>
+							</view>
+							<view class="scorll-th">
+								<view class="scorll-td">
+									<view class="content">
+										{{i.totalscore}}
+									</view>
+								</view>
+							</view>
+							<view class="scorll-th">
+								<view class="scorll-td">
+									<view class="content">
+										{{i.gotscore}}
+									</view>
+								</view>
+							</view>
+							<view class="scorll-th">
+								<view class="scorll-td">
+									<view class="content">
+										<u-checkbox-group @change="checkboxGroupChange">
+											<u-checkbox @change="checkboxChange(index,index1)" v-model="i.checked" :name="item.name"></u-checkbox>
+										</u-checkbox-group>
+									</view>
+								</view>
+							</view>
+						</view>
+					</scroll-view>
+
+				</view>
+			</u-table>
+
+		</view>
+	</view>
+</template>
+
+<script>
+	export default {
+		name: 'taskdetail',
+		data() {
+			return {
+				scrollTop: 0,
+				old: {
+					scrollTop: 0
+				},
+
+
+				taskhead: 'xxxx巡检',
+				list: [{
+						state: '0',
+						childname: '主站',
+						detail: 'xxxx系统',
+						totalgrade: '400',
+						prograss: '20',
+						problem: '1',
+						lostgrade: '12',
+						gotgrade: '23',
+						show: true,
+						tableList: [{
+								project: 'xxxx项目',
+								content: 'xxxx内容',
+								taskway: 'xxx方式',
+								necessity: 'xxxxxx必要方式',
+								scoreList: [{
+									score: '10',
+									scorename: 'xxxxx评分项'
+								}],
+								totalscore: '5',
+								gotscore: '5',
+								checked: false
+							},
+							{
+									project: 'xxxx项目',
+									content: 'xxxx内容',
+									taskway: 'xxx方式',
+									necessity: 'xxxxxx必要方式',
+									scoreList: [{
+										score: '10',
+										scorename: 'xxxxx评分项'
+									}],
+									totalscore: '5',
+									gotscore: '5',
+									checked: false
+								},
+
+						],
+
+					},
+					{
+						state: '1',
+						childname: '主站',
+						detail: 'xxxx系统',
+						totalgrade: '400',
+						prograss: '20',
+						problem: '1',
+						lostgrade: '12',
+						gotgrade: '23',
+						show: false,
+						tableList: [
+							{
+									project: 'xxxx项目',
+									content: 'xxxx内容',
+									taskway: 'xxx方式',
+									necessity: 'xxxxxx必要方式',
+									scoreList: [{
+										score: '10',
+										scorename: 'xxxxx评分项'
+									}],
+									totalscore: '5',
+									gotscore: '5',
+									checked: false
+								},
+						],
+					},
+					{
+						state: '2',
+						childname: '主站',
+						detail: 'xxxx系统',
+						totalgrade: '400',
+						prograss: '20',
+						problem: '1',
+						lostgrade: '12',
+						gotgrade: '23',
+						show: false,
+						tableList: [],
+					}
+				]
+			}
+		},
+		methods: {
+			// 选中某个复选框时，由checkbox时触发
+			checkboxChange(e) {
+				//console.log(e);
+			},
+			// 选中任一checkbox时，由checkbox-group触发
+			checkboxGroupChange(e) {
+				// console.log(e);
+			},
+			scroll: function(e) {
+				this.old.scrollTop = e.detail.scrollTop
+			},
+			open(index) {
+				this.list[index].show = !this.list[index].show;
+				this.list.map((val, idx) => {
+					if (index != idx) this.list[idx].show = false;
+				})
+			},
+			todetail(list) {
+				uni.navigateTo({
+					url: '/pages/task/score'
+				})
+			}
+		}
+	}
+</script>
+
+<style lang="scss" scoped>
+	.scorll-content {
+		padding: 0;
+
+		.scroll-view_H {
+			white-space: nowrap;
+			width: 100%;
+
+			.scorll-th {
+				display: inline-grid;
+				width: 200rpx;
+
+
+				.srorll-title {
+					height: 60rpx;
+					line-height: 60rpx;
+					text-align: center;
+					font-size: 28rpx;
+					border: 1px solid #f6f6f6;
+					background: #ccebe9;
+					color: #FFFFFF;
+
+				}
+
+				.scorll-td {
+					width: 100%;
+					border: 1px solid #f6f6f6;
+					font-size: 28rpx;
+					color: #606266;
+					height: 320rpx;
+					white-space: normal;
+					overflow-y: auto;
+
+					.content {
+						padding: 10rpx 20rpx;
+						line-height: 40rpx;
+						white-space: normal;
+
+						.way-part {
+							.wayname {
+								color: #007AFF;
+								width: 80%;
+								line-height: 40rpx;
+
+								.name {
+									color: #606266;
+								}
+							}
+						}
+
+						.score-part {
+							display: flex;
+							justify-content: space-between;
+							font-size: 28rpx;
+							margin-bottom: 10rpx;
+
+							.scorename {
+								color: #333333;
+								width: 80%;
+								line-height: 40rpx;
+							}
+
+							.score {
+								font-size: 24rpx;
+
+							}
+
+							.normal {
+								color: #18B566;
+							}
+
+							.red {
+								color: red;
+							}
+
+
+						}
+
+						.tips {
+							margin-bottom: 10rpx;
+							font-size: 24rpx;
+							color: #FFFFFF;
+							background: #ccebe9;
+							height: 60rpx;
+							line-height: 60rpx;
+							border-radius: 0 0 10rpx 10rpx;
+							text-align: center;
+							padding: 0 10rpx;
+						}
+					}
+				}
+			}
+
+			.detail {
+				width: 250rpx;
+				margin: 0 !important;
+			}
+
+			.pic {
+				width: 300rpx;
+
+				/deep/uni-swiper {
+					height: 70px !important;
+				}
+			}
+		}
+	}
+
+	.taskdetail {
+		.table-top {
+			.small {
+				width: 10%;
+			}
+
+			.normal {
+				width: 20%;
+			}
+
+			.large {
+				width: 30%;
+			}
+		}
+
+		.table-part {
+			.small {
+				width: 10%;
+			}
+
+			.normal {
+				width: 20%;
+			}
+
+			.large {
+				width: 30%;
+			}
+
+			.state {}
+
+			.grey {
+				color: #909399;
+
+			}
+
+			.yellow {
+				color: #ff9900;
+			}
+
+			.green {
+				color: #19be6b;
+			}
+
+			.detail {
+
+				margin-top: 10rpx;
+				text-align: left;
+
+				.title {
+					color: #606266;
+					font-size: 26rpx;
+
+					.txt {
+						color: #999999;
+						margin-left: 10rpx;
+					}
+
+					.red {
+						color: #fa3534;
+						margin-left: 10rpx;
+					}
+				}
+
+
+			}
+		}
+	}
+</style>

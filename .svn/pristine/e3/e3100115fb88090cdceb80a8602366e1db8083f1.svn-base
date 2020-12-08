@@ -1,0 +1,138 @@
+{
+	"easycom": {
+		"^u-(.*)": "@/uview-ui/components/u-$1/u-$1.vue"
+	},
+	"pages": [
+		{
+		    "path" : "pages/startpage/startpage",
+		    "style" : {}
+		},
+		{
+			"path": "pages/login/login",
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "首页",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		}, {
+			"path": "pages/public/public",
+			"style": {
+				"navigationBarTitleText": "公告列表",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/public/newpublic",
+			"style": {
+				"navigationBarTitleText": "新增公告",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/public/range",
+			"style": {
+				"navigationBarTitleText": "通知范围",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/public/publicList",
+			"style": {
+				"navigationBarTitleText": "公告列表",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": true
+			}
+
+		},
+		{
+			"path": "pages/problem/list",
+			"style": {
+				"navigationBarTitleText": "问题明细",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": true
+			}
+
+		}
+
+		, {
+			"path": "pages/process/process",
+			"style": {
+				"navigationBarTitleText": "人员执行流程",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": true
+			}
+		}, {
+			"path": "pages/task/task",
+			"style": {
+				"navigationBarTitleText": "任务",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": true
+			}
+		}, {
+			"path": "pages/recycle/recycle",
+			"style": {
+				"navigationBarTitleText": "回收站",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		}
+	   
+        ,{
+            "path" : "pages/task/standard",
+            "style" : {
+				"navigationBarTitleText": "任务标准",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": true
+			}
+        }
+		,{
+		    "path" : "pages/task/detail",
+		    "style" : {
+				"navigationBarTitleText": "任务明细",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+		    "path" : "pages/task/score",
+		    "style" : {
+				"navigationBarTitleText": "评分项",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": true
+			}
+		}
+    ],
+	// "tabBar": {
+	// 	"color": "#7A7E83",
+	// 	"selectedColor": "#007AFF",
+	// 	"borderStyle": "black",
+	// 	"backgroundColor": "#ffffff",
+	// 	"list": [{
+	// 			"pagePath": "pages/index/index",
+	// 			"iconPath": "/static/tabbar/index.png",
+	// 			"selectedIconPath": "/static/tabbar/index_selected.png",
+	// 			"text": "项目"
+	// 		}
+	// 	]
+	// },
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "uni-app",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"navigationStyle": "custom",
+		"backgroundColor": "#F8F8F8",
+		 "rpxCalcMaxDeviceWidth": 750, 
+		"rpxCalcBaseDeviceWidth": 375, 
+		"rpxCalcIncludeWidth": 750 
+	}
+
+}

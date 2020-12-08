@@ -1,0 +1,1678 @@
+<template>
+	<view class="checktask">
+		<u-sticky :offset-top="offset">
+			<view class="checktask-top">
+				<view class="action" @click="newchecktask('new','')">
+					新建任务
+				</view>
+			</view>
+			<view class="task-state">
+				<u-tabs :list="sublist" :is-scroll="false" :current="curNow" @change="sectionChange" active-color="#6ecac3"></u-tabs>
+			</view>
+		</u-sticky>
+
+		<view class="checktask-content">
+			<view class="empty" v-if="list.length <= 0">
+				<image src="../../static/nodata.png" mode=""></image>
+				<view class="empty-tips">
+					暂无数据
+				</view>
+			</view>
+			<scroll-view scroll-y style="height:60vh;width: 100%;" @scrolltolower="onreachBottom">
+				<u-swipe-action v-for="(item,index) in list" :key="index" @open="open" :index="index" :options="item.options"
+				 @click="click" :show="item.show" class="swipe" btn-width="120" @close="close">
+					<view class="part" @click="jump(item.id,item.taskName)">
+						<view class="top-part">
+							<view class="left">
+								<view class="name">
+									{{item.taskName}}
+									<u-badge type="error" :count="item.total_issue" class="badge-msg"></u-badge>
+								</view>
+								<view class="detail">
+									<view class="title">
+										检查准则：
+									</view>
+									<view class="size">
+										{{item.norm}}
+									</view>
+								</view>
+								<view class="detail">
+									<view class="title" v-if="item.type==1">
+										整改期限：
+									</view>
+									<view class="title" v-else>
+										计划时间：
+									</view>
+									<view class="time">
+										{{$u.timeFormat(item.startdate, 'yyyy-mm-dd')}}
+										<text>至</text>
+										{{$u.timeFormat(item.enddate, 'yyyy-mm-dd')}}
+									</view>
+								</view>
+							</view>
+							<view class="right">
+								<view class="arrow" v-if="item.unitName">
+									<u-icon name="arrow-right-double" color="#999999" size="32"></u-icon>
+								</view>
+								<view class="arrow" v-else>
+									<u-icon name="arrow-left-double" color="#999999" size="32"></u-icon>
+								</view>
+							</view>
+						</view>
+						<view class="action-part">
+							<view class="left">
+								<view class="company-part">
+									<image src="../../static/company.png" mode=""></image>
+									<view class="company">
+										{{item.unitName}}
+									</view>
+								</view>
+								<view class="prograss">
+									<u-line-progress :striped="true" :percent="item.prograss" :striped-active="true"></u-line-progress>
+								</view>
+							</view>
+							<view class="right">
+								<!--  #ECECEC未开始，#2979ff进行中,#19be6b已完成, #fa3534已延期,#ff9900延期已完成-->
+								<!-- 状态:0删除,1未检查,2检查中,3检查完成,4已上报,5已延期,6延期完成,7未上报,8待审核,9已完结,10审核驳回 -->
+								<view class="state gray" v-if="item.STATUS==1">
+									未开始
+								</view>
+								<view class="state blue" v-if="item.STATUS==2">
+									进行中
+								</view>
+								<view class="state green" v-if="item.STATUS==3">
+									已完成
+								</view>
+								<view class="state red" v-if="item.STATUS==4">
+									已上报
+								</view>
+								<view class="state yellow" v-if="item.STATUS==5">
+									已延期
+								</view>
+								<view class="state yellow" v-if="item.STATUS==6">
+									延期完成
+								</view>
+								<view class="state yellow" v-if="item.STATUS==7">
+									未上报
+								</view>
+								<view class="state yellow" v-if="item.STATUS==8">
+									待审核
+								</view>
+								<view class="state yellow" v-if="item.STATUS==9">
+									已完结
+								</view>
+								<view class="state yellow" v-if="item.STATUS==10">
+									审核驳回
+								</view>
+							</view>
+						</view>
+					</view>
+				</u-swipe-action>
+				<u-loadmore @loadmore="loadmore" bg-color="none" :status="status" :icon-type="iconType" margin="30" :load-text="loadText"
+				 v-if="list.length >=1" />
+			</scroll-view>
+		</view>
+		<!-- 删除弹框 -->
+		<u-modal v-model="delshow" @confirm="delconfirm" :async-close="true" :show-cancel-button="true" :confirm-style="{'color':'#fa3534'}"
+		 :show-title="false" content="您确认要删除吗？">
+		</u-modal>
+		<!-- 上报-->
+		<u-popup v-model="showAllotup" mode="bottom" height="80%" @close="closePerson()">
+			<view class="roleModel">
+				<view class="roleTop">
+					上报
+				</view>
+				<view class="content">
+					<view class="form">
+						<view class="form-part">
+							<view class="form-title">
+								整改审核人
+							</view>
+							<view class="form-right">
+								<u-input v-model="person" :border="true" type="select" height="70" placeholder="请选择整改审核人" disabled="disabled"
+								 @click="choosePerson" />
+							</view>
+						</view>
+					</view>
+				</view>
+				<view class="roleAction">
+					<view class="cancel" @click="cancelPerson()">
+						取消
+					</view>
+					<view class="sure" @click="surePerson()">
+						确定
+					</view>
+				</view>
+			</view>
+		</u-popup>
+		<!-- 选择人员 -->
+		<u-action-sheet :list="personSheetList" v-model="showPerson" @click="personCallback" border-radius="20"></u-action-sheet>
+		<!-- 问题整改指派 -->
+		<u-popup v-model="showAllot" mode="bottom" height="80%" @close="closeproblem()">
+			<view class="roleModel">
+				<view class="roleTop">
+					问题整改指派
+				</view>
+				<view class="content">
+					<!-- 折叠面板 -->
+					<view class="collapsePart">
+						<view class="u-collapse-item" v-for="(item,index) in collapseList">
+							<view :hover-stay-time="200" class="u-collapse-head">
+								<block>
+									<view class="u-icon-wrap" @tap="headClick(index)">
+										<u-icon v-if="arrow" :class="{ 'u-arrow-down-icon-active': item.isShow }" class="u-arrow-down-icon" name="arrow-down"></u-icon>
+									</view>
+									<view class="u-collapse-title u-line-1" @tap="headClick(index)">
+										{{item.name}}
+									</view>
+									<view class="action">
+										<u-input v-model="item.person" type="select" :border="true" @click="openPerson(index)" height="70"
+										 placeholder="指派给" />
+									</view>
+								</block>
+							</view>
+							<view class="u-collapse-body"  v-if="item.isShow">
+								<view class="u-collapse-content">
+									<view class="childPart" v-for="(i,index1) in item.detailList">
+										<view class="left">
+											{{i.detail}}
+										</view>
+										<view class="action">
+											<u-input v-model="i.person" type="select" :border="true" @click="openchildPerson(index,index1)" height="70"
+											 placeholder="指派给" />
+										</view>
+									</view>
+								</view>
+							</view>
+						</view>
+					</view>
+				</view>
+				<view class="roleAction">
+					<view class="cancel" @click="cancelproblem()">
+						取消
+					</view>
+					<view class="sure" @click="sureproblem()">
+						确定
+					</view>
+				</view>
+			</view>
+		</u-popup>
+		<u-action-sheet :list="personSheetList" v-model="showPersonList" @click="personSheetCallback" border-radius="20"></u-action-sheet>
+		<u-action-sheet :list="personSheetList" v-model="showPersonchildList" @click="personchildSheetCallback" border-radius="20"></u-action-sheet>
+
+		<u-popup v-model="showAssign" mode="bottom" height="80%" @close="closeAssign()">
+			<view class="roleModel">
+				<view class="roleTop">
+					任务指派
+				</view>
+				<view class="content">
+					<view class="title">
+						<view class="left">
+							xxx标准xxx标准xxx标准xxx标
+						</view>
+						<view class="right">
+							<u-input v-model="totalperson" type="select" :border="true" @click="opentotalPerson()" height="70" placeholder="指派给" />
+						</view>
+					</view>
+					<!-- 折叠面板 -->
+					<view class="collapsePart">
+						<view class="u-collapse-item" v-for="(item,index) in assignList">
+							<view :hover-stay-time="200" class="u-collapse-head">
+								<block>
+									<view class="u-icon-wrap" @tap="assignClick(index)">
+										<u-icon v-if="arrow" :class="{ 'u-arrow-down-icon-active': item.isShow }" class="u-arrow-down-icon" name="arrow-down"></u-icon>
+									</view>
+									<view class="u-collapse-title u-line-1" @tap="assignClick(index)">
+										{{item.name}}
+									</view>
+									<view class="action">
+										<u-input v-model="item.person" type="select" :border="true" @click="openAssignPerson(index)" height="70"
+										 placeholder="指派给" />
+									</view>
+								</block>
+							</view>
+							<view class="u-collapse-body" v-if="item.isShow">
+								<view class="u-collapse-content">
+									<view class="childPart" v-for="(i,index1) in item.detailList">
+										<view class="left">
+											{{i.detail}}
+										</view>
+										<view class="action">
+											<u-input v-model="i.person" type="select" :border="true" @click="openAssignchildPerson(index,index1)" height="70"
+											 placeholder="指派给" />
+										</view>
+									</view>
+								</view>
+							</view>
+						</view>
+					</view>
+				</view>
+				<view class="roleAction">
+					<view class="cancel" @click="cancelAssign()">
+						取消
+					</view>
+					<view class="sure" @click="sureAssign()">
+						确定
+					</view>
+				</view>
+			</view>
+		</u-popup>
+		<u-action-sheet :list="personSheetList" v-model="showAssignperson" @click="AssignpersonCallback" border-radius="20"></u-action-sheet>
+		<u-action-sheet :list="personSheetList" v-model="showAssignList" @click="AssignSheetCallback" border-radius="20"></u-action-sheet>
+		<u-action-sheet :list="personSheetList" v-model="showAssignchildList" @click="AssignchildSheetCallback" border-radius="20"></u-action-sheet>
+		<u-toast ref="uToast" />
+	</view>
+</template>
+
+<script>
+	import helper from '@/common/helper.js'
+	export default {
+		props: {
+			offset: {
+				type: Number,
+				default: 0
+			},
+		},
+		data() {
+			return {
+				// 头部导航
+				curNow: 0, //当前选中
+				subIndex: 0, //当前选中内容
+				sublist: [{
+						name: '未归档'
+					},
+					{
+						name: '已归档'
+					}
+				],
+				list:[],
+				// list: [{
+				// 		id: '11',
+				// 		type: 0,
+				// 		name: 'xxxxx任务',
+				// 		standard: '电网安全检查',
+				// 		startdate: '1581170184',
+				// 		enddate: '1581170184',
+				// 		company: 'xxx公司',
+				// 		prograss: 70,
+				// 		status: '0',
+				// 		count: '22',
+				// 		show: false,
+				// 		arrowflag: false,
+				// 		options: [{
+				// 				text: '上报',
+				// 				style: {
+				// 					backgroundColor: '#ff9900'
+				// 				}
+				// 			},
+				// 			{
+				// 				text: '导出',
+				// 				style: {
+				// 					backgroundColor: '#19be6b'
+				// 				}
+				// 			},
+				// 			{
+				// 				text: '编辑',
+				// 				style: {
+				// 					backgroundColor: '#007aff'
+				// 				}
+				// 			},
+				// 			{
+				// 				text: '删除',
+				// 				style: {
+				// 					backgroundColor: '#fa3534'
+				// 				}
+				// 			}
+				// 		],
+				// 	},
+				// 	{
+				// 		id: '22',
+				// 		type: 1,
+				// 		name: '2020-12-30xxx公司问题',
+				// 		standard: '电网安全检查',
+				// 		startdate: '1581170184',
+				// 		enddate: '1581170184',
+				// 		company: 'xxx公司',
+				// 		prograss: 100,
+				// 		status: '1',
+				// 		count: '0',
+				// 		show: false,
+				// 		arrowflag: false,
+				// 		options: [{
+				// 				text: '指派',
+				// 				style: {
+				// 					backgroundColor: '#ff9900'
+				// 				}
+				// 			},
+				// 			{
+				// 				text: '导出',
+				// 				style: {
+				// 					backgroundColor: '#19be6b'
+				// 				}
+				// 			},
+				// 			{
+				// 				text: '编辑',
+				// 				style: {
+				// 					backgroundColor: '#007aff'
+				// 				}
+				// 			},
+				// 			{
+				// 				text: '删除',
+				// 				style: {
+				// 					backgroundColor: '#fa3534'
+				// 				}
+				// 			}
+				// 		],
+				// 	},
+				// 	{
+				// 		id: '33',
+				// 		type: 0,
+				// 		name: 'xxxxx任务',
+				// 		standard: '电网安全检查',
+				// 		startdate: '1581170184',
+				// 		enddate: '1581170184',
+				// 		company: 'xxx公司',
+				// 		prograss: 0,
+				// 		status: '2',
+				// 		count: '45',
+				// 		show: false,
+				// 		arrowflag: false,
+				// 		options: [{
+				// 				text: '指派',
+				// 				style: {
+				// 					backgroundColor: '#ff9900'
+				// 				}
+				// 			},
+				// 			{
+				// 				text: '导出',
+				// 				style: {
+				// 					backgroundColor: '#19be6b'
+				// 				}
+				// 			},
+				// 			{
+				// 				text: '编辑',
+				// 				style: {
+				// 					backgroundColor: '#007aff'
+				// 				}
+				// 			},
+				// 			{
+				// 				text: '删除',
+				// 				style: {
+				// 					backgroundColor: '#fa3534'
+				// 				}
+				// 			}
+				// 		],
+				// 	},
+				// 	{
+				// 		id: '44',
+				// 		type: 0,
+				// 		name: 'xxxxx任务',
+				// 		standard: '电网安全检查',
+				// 		startdate: '1581170184',
+				// 		enddate: '1581170184',
+				// 		company: 'xxx公司',
+				// 		prograss: 100,
+				// 		status: '3',
+				// 		count: '9',
+				// 		show: false,
+				// 		arrowflag: false,
+				// 		options: [{
+				// 				text: '上报',
+				// 				style: {
+				// 					backgroundColor: '#ff9900'
+				// 				}
+				// 			},
+				// 			{
+				// 				text: '导出',
+				// 				style: {
+				// 					backgroundColor: '#19be6b'
+				// 				}
+				// 			}
+
+				// 		],
+				// 	},
+				// 	{
+				// 		id: '55',
+				// 		type: 0,
+				// 		name: 'xxxxx任务',
+				// 		standard: '电网安全检查',
+				// 		startdate: '1581170184',
+				// 		enddate: '1581170184',
+				// 		company: 'xxx公司',
+				// 		prograss: 40,
+				// 		status: '4',
+				// 		count: '22',
+				// 		show: false,
+				// 		arrowflag: false,
+				// 		options: [{
+				// 				text: '上报',
+				// 				style: {
+				// 					backgroundColor: '#ff9900'
+				// 				}
+				// 			},
+				// 			{
+				// 				text: '导出',
+				// 				style: {
+				// 					backgroundColor: '#19be6b'
+				// 				}
+				// 			}
+
+				// 		],
+				// 	},
+				// 	{
+				// 		id: '66',
+				// 		type: 0,
+				// 		name: 'xxxxx任务',
+				// 		standard: '电网安全检查',
+				// 		startdate: '1581170184',
+				// 		enddate: '1581170184',
+				// 		company: 'xxx公司',
+				// 		prograss: 99,
+				// 		status: '1',
+				// 		count: '22',
+				// 		show: false,
+				// 		arrowflag: false,
+
+				// 		options: [{
+				// 				text: '上报',
+				// 				style: {
+				// 					backgroundColor: '#ff9900'
+				// 				}
+				// 			},
+				// 			{
+				// 				text: '导出',
+				// 				style: {
+				// 					backgroundColor: '#19be6b'
+				// 				}
+				// 			}
+
+				// 		],
+				// 	},
+				// ],
+				//删除
+				delshow: false,
+				delindex: '',
+				//新增
+				type: '',
+				id: '',
+				//上报
+				personSheetList: [{
+						text: '专责1'
+					},
+					{
+						text: '专责2'
+					},
+					{
+						text: '专责3'
+					},
+				],
+				person: '',
+				showPerson: false,
+				showAllotup: false,
+				//问题整改指派
+				showAllot: false,
+				arrow: true, //是否显示箭头
+				showPersonList: false,
+				showPersonchildList: false,
+				openindex: '',
+				openchildindex: '',
+				clickindex: '',
+				collapseList: [{
+						name: '主站',
+						isShow: false,
+						person: '',
+						detailList: [{
+								detail: '机房',
+								grade: '400',
+								person: ''
+							},
+							{
+								detail: '备调系统',
+								grade: '60',
+								person: ''
+							}
+						]
+					},
+					{
+						name: '子站',
+						person: '',
+						isShow: false,
+						detailList: [{
+								detail: 'xxx站1',
+								grade: '400',
+								person: ''
+							},
+							{
+								detail: 'xxx站2',
+								grade: '60',
+								person: ''
+							}
+						]
+					},
+					{
+						name: '网络安全',
+						person: '',
+						isShow: false,
+						detailList: [{
+							detail: 'xxx安全',
+							grade: '400',
+							person: ''
+						}]
+					}
+				],
+				//任务指派
+				showAssign: false,
+				showAssignperson: false,
+				showAssignList: false,
+				showAssignchildList: false,
+				Assignindex: '',
+				Assignchildindex: '',
+				elIdAssignclick: '',
+				clickAssign: '',
+				totalperson: '',
+				assignList: [{
+						name: '子表1',
+						isShow: false,
+						person: '',
+						detailList: [{
+								detail: '检查模块1',
+								person: ''
+							},
+							{
+								detail: '检查模块2',
+								person: ''
+							}
+						]
+					},
+					{
+						name: '子表2',
+						isShow: false,
+						person: '',
+						detailList: [{
+								detail: '检查模块1',
+								person: ''
+							}
+							
+						]
+					},
+					{
+						name: '子表3',
+						isShow: false,
+						person: '',
+						detailList: [{
+								detail: '检查模块1',
+								person: ''
+							},
+							{
+								detail: '检查模块2',
+								person: ''
+							}
+						]
+					}
+				],
+				// 分页
+				status: 'loadmore', // 下拉加载状态
+				iconType: 'flower',
+				loadText: {
+					loadmore: '点击或上拉加载更多',
+					loading: '正在加载...',
+					nomore: '我也是有底线的'
+				},
+				pages: 1, //实际页数
+				pageNum: 1, //当前下拉加载页数
+				pageSize: 10, //每页的条数
+				uid: null
+			}
+		},
+		created() {
+			this.uid = uni.getStorageSync("USER_ID")
+			this.getlist(0)
+		},
+		methods: {
+			jump(id,name){
+				let param = {
+					id:id,
+					uid:this.uid,
+					name:name
+				}
+				uni.navigateTo({
+					url:'/pages/task/detail?param='+JSON.stringify(param)
+				})
+			},
+			//状态切换
+			sectionChange(index) {
+				this.getlist(index)
+				this.curNow = index;
+			},
+			getlist(type) {
+				this.status = 'loading';
+				let param = {
+					type: type,
+					uid: this.uid,
+					page: this.pageNum,
+					size: this.pageSize
+				}
+				helper.request(helper.websiteUrl + 'v1/queryTaskList', param, 'POST', true, res => {
+					if (res.length != 0) {
+						this.pages = parseInt(res[0].total)
+						res.forEach(item => {
+							let normStr = ""
+							item.show = false,
+								item.arrowflag = false,
+								item.normName.forEach(val => {
+									normStr += val.NAME + "、"
+								})
+							item.norm = normStr.substring(0, normStr.length - 1)
+							item.prograss = parseInt(item.result)
+							if (item.type == 2) {
+								item.options = [{
+										text: '导出',
+										style: {
+											backgroundColor: '#19be6b'
+										}
+									}
+								]
+							} else {
+								if(item.user_id==this.uid){
+									item.options = [{
+											text: '指派',
+											style: {
+												backgroundColor: '#ff9900'
+											}
+										},
+										{
+											text: '导出',
+											style: {
+												backgroundColor: '#19be6b'
+											}
+										},
+										{
+											text: '编辑',
+											style: {
+												backgroundColor: '#007aff'
+											}
+										},
+										{
+											text: '删除',
+											style: {
+												backgroundColor: '#fa3534'
+											}
+										}
+									]
+								}else{
+									item.options = [{
+											text: '指派',
+											style: {
+												backgroundColor: '#ff9900'
+											}
+										},
+										{
+											text: '导出',
+											style: {
+												backgroundColor: '#19be6b'
+											}
+										},
+										{
+											text: '编辑',
+											style: {
+												backgroundColor: '#007aff'
+											}
+										}
+									]
+								}
+							}
+						})
+						const recordsList = res;
+						if (this.pageNum > 1) {
+							this.list = recordsList;
+							this.status = 'nomore';
+						} else {
+							this.list = recordsList;
+							this.status = 'nomore';
+						}
+						uni.stopPullDownRefresh();
+					} else {
+						this.list = [];
+						this.pages = 1;
+						this.pageNum = 1;
+						this.status = 'nomore';
+					}
+				})
+			},
+			// 上拉加载
+			onreachBottom(e) {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				// this.getlist();
+			},
+			loadmore() {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				// this.getlist();
+			},
+			open(index) {
+				this.list[index].show = true;
+				this.list[index].arrowflag = true;
+				this.list.map((val, idx) => {
+					if (index != idx) {
+						this.list[idx].show = false;
+						this.list[idx].arrowflag = false;
+					}
+				})
+			},
+			close(index) {
+				this.list.map((val, idx) => {
+					this.list[idx].arrowflag = false;
+				})
+			},
+			click(index, index1) {
+				switch (index1) {
+					case 0:
+						if (this.list[index].options[index1].text == '上报') {
+							this.showPerson = true;
+						} else {
+							if (this.list[index].type == 1) {
+								console.log('问题指派')
+								this.showAllot = true;
+							} else {
+
+								console.log('任务指派')
+								this.showAssign = true;
+							}
+						}
+
+						break;
+					case 1:
+						console.log('导出')
+						break;
+					case 2:
+						console.log('编辑')
+						this.type = 'edit';
+						this.id = this.list[index].id;
+						this.newchecktask(this.type, this.id)
+						break;
+					case 3:
+						console.log('删除')
+						this.delshow = true;
+						this.delindex = index;
+						break;
+					default:
+						return;
+				}
+			},
+			//删除
+			delconfirm() {
+				let id = this.list[this.delindex].id
+				this.deleteTask(id);
+				this.delshow = false;
+			},
+			//新建任务
+			newchecktask(type, id) {
+				if (type == 'new') {
+					uni.navigateTo({
+						url: '/pages/task/task'
+					})
+				} else {
+					uni.navigateTo({
+						url: '/pages/task/task?id=' + id
+					})
+				}
+			},
+			//上报
+			choosePerson() {
+				this.showPerson = true;
+			},
+			personCallback(index) {
+				this.person = this.personSheetList[index].text;
+			},
+			cancelPerson() {
+				this.showAllotup = false;
+			},
+			closePerson() {
+				this.showAllotup = false;
+			},
+			surePerson() {
+				this.showAllotup = false;
+			},
+			//问题整改指派
+			// 点击collapsehead头部
+			headClick(index) {
+				this.clickindex = index;
+				this.collapseList[index].isShow = !this.collapseList[index].isShow;
+				this.collapseList.map((e, index) => {
+					if (index != this.clickindex) {
+						e.isShow = false;
+					}
+				})
+			},
+			openPerson(index) {
+				this.openindex = index;
+				this.showPersonList = true;
+			},
+			personSheetCallback(index) {
+				this.collapseList[this.openindex].person = this.personSheetList[index].text;
+			},
+			openchildPerson(index, index1) {
+				this.openindex = index;
+				this.openchildindex = index1;
+				this.showPersonchildList = true;
+			},
+			personchildSheetCallback(index) {
+				this.collapseList[this.openindex].detailList[this.openchildindex].person = this.personSheetList[index].text;
+			},
+			cancelproblem() {
+				this.showAllot = false;
+			},
+			closeproblem() {
+				this.showAllot = false;
+			},
+			sureproblem() {
+				this.showAllot = false;
+			},
+			//问题整改指派
+			//获取collapse内容高度
+			opentotalPerson() {
+				this.showAssignperson = true;
+			},
+			AssignpersonCallback(index) {
+				this.totalperson = this.personSheetList[index].text;
+			},
+			// 点击collapsehead头部
+			assignClick(index) {
+				this.clickAssign = index;
+				this.assignList[index].isShow = !this.assignList[index].isShow;
+				this.assignList.map((e, index) => {
+					if (index != this.clickAssign) {
+						e.isShow = false;
+					}
+				})
+			},
+			openAssignPerson(index) {
+				this.Assignindex = index;
+				this.showAssignList = true;
+			},
+			AssignSheetCallback(index) {
+				this.assignList[this.Assignindex].person = this.personSheetList[index].text;
+
+			},
+			openAssignchildPerson(index, index1) {
+				this.Assignindex = index;
+				this.Assignchildindex = index1;
+				this.showAssignchildList = true;
+			},
+			AssignchildSheetCallback(index) {
+				this.assignList[this.Assignindex].detailList[this.Assignchildindex].person = this.personSheetList[index].text;
+			},
+			cancelAssign() {
+				this.showAssign = false;
+			},
+			closeAssign() {
+				this.showAssign = false;
+			},
+			sureAssign() {
+				this.showAssign = false;
+			},
+			//删除任务
+			deleteTask(id) {
+				let param = {
+					uid: this.uid,
+					id: id
+				}
+				helper.request(helper.websiteUrl + 'v1/deleteTask', param, 'POST', true, res => {
+					this.getlist(this.curNow);
+				})
+			}
+		}
+	}
+</script>
+
+<style lang="less" scoped>
+	/deep/.u-content {
+		border-radius: 10rpx 0 0 10rpx !important;
+	}
+
+	/deep/.u-item-bg {
+		height: 100%;
+		border-radius: 0;
+		bottom: 0;
+	}
+
+	
+	/deep/.u-subsection {
+		padding: 0 10rpx !important;
+		border-radius: 0 !important;
+	}
+
+
+
+	.roleModel {
+		width: 100%;
+		position: relative;
+		padding-top: 90rpx;
+		padding-bottom: 120rpx;
+
+
+		.roleTop {
+			height: 90rpx;
+			line-height: 90rpx;
+			background: #4abdb4;
+			color: #FFFFFF;
+			font-size: 34rpx;
+			text-align: center;
+			position: fixed;
+			top: 0rpx;
+			width: 100%;
+			z-index: 99;
+		}
+
+		.content {
+			padding: 30rpx;
+
+			.title {
+				color: #333333;
+				font-size: 30rpx;
+				margin-bottom: 30rpx;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+
+				.left {
+					width: 60%;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					display: -webkit-box;
+					-webkit-box-orient: vertical;
+					-webkit-line-clamp: 2;
+					
+				}
+
+				.right {
+					width: 40%;
+				}
+			}
+
+			.collapsePart {
+				margin-bottom: 60rpx;
+				border: 2rpx solid #f6f6f6;
+
+				.u-collapse-head {
+					position: relative;
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+					color: #333333;
+					font-size: 28rpx;
+					line-height: 1;
+					padding: 10rpx 6rpx;
+					text-align: left;
+					border-bottom: 2rpx solid #f6f6f6;
+
+					.action {
+						display: flex;
+						justify-content: space-between;
+						margin-left: 20rpx;
+						width: 50%;
+
+						.right {
+							font-size: 26rpx;
+							color: #2979ff;
+							margin: 4rpx;
+						}
+
+						.red {
+							color: #fa3534;
+						}
+					}
+				}
+
+				.u-collapse-title {
+					flex: 1;
+					width: 100%;
+					line-height: 60rpx;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					display: -webkit-box;
+					-webkit-line-clamp: 2;
+					-webkit-box-orient: vertical;
+				}
+
+				.u-arrow-down-icon {
+					transition: all 0.3s;
+					margin-right: 20rpx;
+					margin-left: 14rpx;
+
+				}
+
+				.u-arrow-down-icon-active {
+					transform: rotate(180deg);
+					transform-origin: center center;
+
+				}
+
+				.u-collapse-body {
+					overflow: hidden;
+					transition: all 0.3s;
+
+				}
+
+				.u-collapse-content {
+					overflow: hidden;
+					font-size: 26rpx;
+					color: #666;
+					text-align: left;
+					padding: 10rpx 6rpx;
+
+					.childPart {
+						border-bottom: 2rpx solid #f6f6f6;
+						display: flex;
+						justify-content: space-between;
+						align-items: center;
+						padding: 10rpx 0;
+
+						.left {
+							flex: 1;
+							width: 100%;
+							line-height: 50rpx;
+							overflow: hidden;
+							text-overflow: ellipsis;
+							display: -webkit-box;
+							-webkit-line-clamp: 2;
+							-webkit-box-orient: vertical;
+							padding-left: 60rpx;
+						}
+
+						.action {
+							display: flex;
+							justify-content: space-between;
+							width: 40%;
+							margin-left: 20rpx;
+
+							.right {
+								font-size: 24rpx;
+								color: #2979ff;
+								margin: 4rpx;
+							}
+
+							.red {
+								color: #fa3534;
+							}
+						}
+					}
+				}
+
+			}
+
+			.form {
+				width: 100%;
+
+				.border {
+					border-bottom: 2rpx solid #f6f6f6;
+				}
+
+				.form-part {
+					margin: 20rpx 0;
+					display: flex;
+					justify-content: space-between;
+					width: 100%;
+					padding: 20rpx 0;
+
+
+					.form-title {
+						color: #333333;
+						font-size: 30rpx;
+						margin-right: 20rpx;
+					}
+
+					.form-right {
+						width: 100%;
+						flex: 1;
+
+						.time {
+
+							color: #606266;
+							font-size: 28rpx;
+							display: flex;
+							justify-content: flex-end;
+
+							.gray {
+								color: #999999;
+							}
+
+							view {
+								margin-right: 10rpx;
+
+								text {
+									margin: 0 10rpx;
+								}
+							}
+						}
+
+					}
+
+
+				}
+			}
+
+
+		}
+
+		.roleAction {
+			position: fixed;
+			bottom: 0;
+			height: 100rpx;
+			line-height: 100rpx;
+			display: flex;
+			justify-content: space-around;
+			font-size: 32rpx;
+			width: 100%;
+			background: #FFFFFF;
+			border-top: 2rpx solid #f6f6f6;
+			align-items: center;
+
+			.cancel {
+				width: 40%;
+				border: 2rpx solid #dedede;
+				color: #606266;
+				text-align: center;
+				height: 80rpx;
+				line-height: 80rpx;
+				border-radius: 80rpx;
+			}
+
+			.sure {
+				width: 40%;
+				color: #FFFFFF;
+				background: #4abdb4;
+				text-align: center;
+				height: 80rpx;
+				line-height: 80rpx;
+				border: 2rpx solid #4abdb4;
+				border-radius: 80rpx;
+			}
+		}
+
+	}
+
+
+
+	.checktask {
+		background: #F8F8F8;
+
+		.checktask-top {
+			padding: 10rpx 30rpx;
+			background: #F8F8F8;
+
+			.action {
+				background-image: linear-gradient(to bottom right, #28b09c, #62ca99);
+				border-radius: 10rpx;
+				color: #FFFFFF;
+				font-size: 30rpx;
+				padding: 10rpx 30rpx;
+				height: 60rpx;
+				line-height: 60rpx;
+				border: 2rpx solid #FFFFFF;
+				// box-shadow: 0 10rpx 10rpx rgba(0,0,0,0.15);
+			}
+		}
+
+		.task-state {
+			padding: 0 30rpx;
+			// margin: 20rpx 0;
+			background: #F8F8F8;
+		}
+
+
+		.checktask-content {
+			padding: 30rpx;
+			padding-bottom: 100rpx;
+
+			.swipe {
+				margin-bottom: 20rpx;
+			}
+
+			.part {
+				padding: 20rpx;
+				border: 2rpx solid #f6f6f6;
+				background: #FFFFFF;
+				position: relative;
+
+				.top-part {
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+					margin: 10rpx 0;
+
+					.left {
+						.name {
+							color: #333333;
+							font-size: 32rpx;
+							margin-bottom: 20rpx;
+
+						}
+
+						.detail {
+							display: flex;
+							margin-bottom: 20rpx;
+							height: 50rpx;
+							line-height: 50rpx;
+
+							.title {
+								font-size: 30rpx;
+								color: #333333;
+							}
+
+							.size {
+								color: #606266;
+								font-size: 28rpx;
+							}
+
+							.time {
+								color: #999999;
+								font-size: 28rpx;
+
+								text {
+									color: #606266;
+									margin: 0 10rpx;
+								}
+							}
+						}
+					}
+
+					.right {
+						width: 100rpx;
+						text-align: right;
+
+						.name {
+							width: 100%;
+							flex: 1;
+							font-size: 30rpx;
+							color: #333333;
+							overflow: hidden;
+							display: -webkit-box;
+							text-overflow: ellipsis;
+							-webkit-line-clamp: 2;
+							-webkit-box-orient: vertical;
+							line-height: 50rpx;
+						}
+
+						.detail {
+							width: 100%;
+							display: flex;
+							justify-content: space-between;
+							line-height: 50rpx;
+
+							.size {
+								font-size: 28rpx;
+								color: #606266;
+							}
+
+							.time {
+								font-size: 24rpx;
+								color: #999999;
+							}
+						}
+					}
+				}
+
+				.action-part {
+					display: flex;
+					font-size: 28rpx;
+					border-top: 2rpx solid #f6f6f6;
+					padding-top: 30rpx;
+					justify-content: space-between;
+					align-items: center;
+
+					.left {
+						width: 60%;
+
+						.company-part {
+							display: flex;
+
+							image {
+								width: 50rpx;
+								height: 50rpx;
+								margin-right: 20rpx;
+							}
+
+							.company {
+								font-size: 30rpx;
+								color: #333333;
+
+							}
+						}
+
+						.prograss {
+							margin: 20rpx 0;
+						}
+					}
+
+					.right {
+						.state {
+							text-align: center;
+							margin-right: 20rpx;
+							border-radius: 60rpx;
+							color: #FFFFFF;
+							padding: 10rpx 20rpx;
+							font-size: 28rpx;
+						}
+
+						.red {
+
+							background: #FA3534;
+						}
+
+						.yellow {
+
+							background: #ff9900;
+						}
+
+						.blue {
+
+							background: #2979FF;
+						}
+
+						.gray {
+
+							background: #ECECEC;
+						}
+
+						.green {
+
+							background: #18b566;
+						}
+					}
+
+
+				}
+
+			}
+		}
+
+		.bottom {
+
+			position: fixed;
+			width: 100%;
+			background: #FFFFFF;
+			height: 100rpx;
+			line-height: 100rpx;
+			box-shadow: 0 -6rpx 10rpx rgba(0, 0, 0, 0.15);
+			bottom: 0;
+			z-index: 99;
+
+			.check-bottom {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 0 30rpx;
+
+				.left {
+					display: flex;
+					color: #2979ff;
+					font-size: 32rpx;
+
+				}
+
+				.right {
+					display: flex;
+					justify-content: flex-end;
+
+					.batch {
+
+						background: #19be6b;
+						color: #FFFFFF;
+						border-radius: 40rpx;
+						height: 60rpx;
+						line-height: 60rpx;
+						text-align: center;
+						margin-right: 20rpx;
+						padding: 0 20rpx;
+						box-shadow: 0 6rpx 6rpx #71d5a1;
+
+					}
+
+					.stop {
+						background: #ff9900;
+						margin: 20rpx 0;
+					}
+
+					.del {
+						background: #fa3534;
+						box-shadow: 0 6rpx 6rpx #fab6b6;
+					}
+				}
+			}
+
+		}
+
+		.model {
+			padding: 30rpx;
+
+			.rename {
+				margin: 20rpx 0;
+			}
+
+			.stop {
+				font-size: #333333;
+				line-height: 50rpx;
+				font-size: 32rpx;
+				margin: 20rpx 0;
+			}
+
+			.tips {
+				font-size: 28rpx;
+				color: #999999;
+			}
+		}
+
+
+		.roleModel {
+			width: 100%;
+			position: relative;
+			padding-top: 90rpx;
+			padding-bottom: 120rpx;
+
+
+			.roleTop {
+				height: 90rpx;
+				line-height: 90rpx;
+				background: #4abdb4;
+				color: #FFFFFF;
+				font-size: 34rpx;
+				text-align: center;
+				position: fixed;
+				top: 0rpx;
+				width: 100%;
+				z-index: 99;
+			}
+
+			.content {
+
+				padding: 30rpx;
+			}
+
+			.choose {
+				display: flex;
+				justify-content: flex-start;
+				align-items: center;
+				margin: 40rpx 0 20rpx;
+
+				.title {
+					color: #333333;
+					font-size: 30rpx;
+					margin-right: 10rpx;
+				}
+
+				.input_part {
+					margin-right: 10rpx;
+					width: 100%;
+					flex: 1;
+				}
+
+				.add {
+					width: 100rpx;
+					padding: 0 10rpx;
+					height: 70rpx;
+					line-height: 70rpx;
+					font-size: 30rpx;
+					border: 2rpx solid #dcdfe6;
+					border-radius: 10rpx;
+					color: #4abdb4;
+					text-align: center;
+				}
+			}
+
+			.hasChoosed {
+				border: 2rpx solid #f6f6f6;
+				padding: 20rpx;
+				margin: 20rpx 0;
+				border-radius: 20rpx;
+				width: 100%;
+
+				.has {
+					display: inline-flex;
+					justify-content: space-between;
+					align-items: center;
+					text-align: center;
+					background: #F8F8F8;
+					width: 25%;
+					padding: 10rpx;
+					border-radius: 10rpx;
+					margin: 10rpx;
+
+					.name {
+
+						font-size: 28rpx;
+					}
+
+					.icon {
+						margin-left: 10rpx;
+					}
+				}
+			}
+
+			.range {
+				margin: 20rpx 0;
+
+				.title {
+					font-size: 32rpx;
+					color: #333333;
+					text-align: center;
+					width: 100%;
+					height: 80rpx;
+					line-height: 80rpx;
+				}
+
+				.part {
+					display: flex;
+					justify-content: space-between;
+
+					.left {
+						border: 2rpx solid #f6f6f6;
+						width: 50%;
+
+						.top {
+							display: flex;
+							justify-content: space-between;
+							align-items: center;
+							font-size: 30rpx;
+							color: #333333;
+							padding: 10rpx 20rpx;
+						}
+
+						.list {
+							padding: 10rpx 20rpx;
+
+							/deep/.u-checkbox {
+								border-bottom: 2rpx solid #f6f6f6;
+							}
+
+							.job {
+								color: #007AFF;
+								margin-right: 10rpx;
+
+							}
+
+							text {
+								font-size: 28rpx;
+								color: #606266;
+
+							}
+						}
+					}
+
+					.right {
+						width: 40%;
+						border: 2rpx solid #f6f6f6;
+
+						.top {
+							font-size: 30rpx;
+							color: #4abdb4;
+							padding: 10rpx 20rpx;
+						}
+
+						.list {
+							padding: 10rpx 20rpx;
+
+							.has {
+								display: flex;
+								background: #f6f6f6;
+								padding: 10rpx;
+								justify-content: space-between;
+								align-items: center;
+								border-radius: 10rpx;
+								margin-top: 10rpx;
+
+								.name {
+									font-size: 28rpx;
+								}
+
+								.icon {
+									margin: 0 10rpx;
+								}
+							}
+						}
+					}
+				}
+			}
+
+			.roleAction {
+				position: fixed;
+				bottom: 0;
+				height: 100rpx;
+				line-height: 100rpx;
+				display: flex;
+				justify-content: space-around;
+				font-size: 32rpx;
+				width: 100%;
+				background: #FFFFFF;
+
+				.cancel {
+					width: 40%;
+					border: 2rpx solid #dedede;
+					color: #606266;
+					text-align: center;
+					height: 80rpx;
+					line-height: 80rpx;
+					border-radius: 80rpx;
+				}
+
+				.sure {
+					width: 40%;
+					color: #FFFFFF;
+					background: #4abdb4;
+					text-align: center;
+					height: 80rpx;
+					line-height: 80rpx;
+					border: 2rpx solid #4abdb4;
+					border-radius: 80rpx;
+				}
+			}
+		}
+
+
+	}
+</style>

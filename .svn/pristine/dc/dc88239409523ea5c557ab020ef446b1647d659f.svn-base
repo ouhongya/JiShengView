@@ -1,0 +1,779 @@
+<template>
+	<view class="problemList">
+		<a-head :text="headTitle" bgColor='#4abdb4'></a-head>
+		<view class="scorll-content">
+			<scroll-view class="scroll-view_H" scroll-x="true" @scroll="scroll" scroll-left="120">
+				<view class="top">
+					<view class="scorll-th detail">
+						<view class="srorll-title">
+							评分项
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="srorll-title">
+							评分类型
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="srorll-title">
+							分值
+						</view>
+					</view>
+					<view class="scorll-th">
+						<view class="srorll-title">
+							问题性质
+						</view>
+					</view>
+					<view class="scorll-th pic">
+						<view class="srorll-title">
+							添加照片
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="srorll-title">
+							备注
+						</view>
+					</view>
+				</view>
+				<view v-for="(item,index) in tableList">
+					<view class="scorll-th detail">
+						<view class="scorll-td">
+							<view class="content">
+								{{item.problem}}
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="scorll-td">
+							<view class="content">
+								<u-input v-model="item.problemtype" type="select" :border="true" @click="chooseType(index)" />
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="scorll-td">
+							<view class="content">
+								<view class="number">
+									<view class="sub" @tap.stop="sub( index)">
+										<u-icon color="#333" size="24" name="minus"></u-icon>
+									</view>
+									<view class="input">
+										<input type="number" v-model="item.number" @input.stop="numberChange( $event, index)" @blur="blur($event, index)" />
+									</view>
+									<view class="add" @tap.stop="add(index)">
+										<u-icon color="#333" size="24" name="plus"></u-icon>
+									</view>
+								</view>
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th">
+						<view class="scorll-td">
+							<view class="content">
+								<u-input v-model="item.problemnature" type="select" :border="true" @click="chooseNature(index)" />
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th pic">
+						<view class="scorll-td">
+							<view class="content">
+								<view class="tips" @click="managePic1(index,item.list1)" v-if="item.showPic1">管理图片</view>
+								<view class="tips" @click="finishPic1(index,item.fileList1)" v-else>管理完成</view>
+								<view class="imgpart" v-if="item.showPic1">
+									<u-swiper :list="item.list1" @click="previewImage(item.list1)"></u-swiper>
+								</view>
+								<view class="upload" v-else>
+									<u-upload :action="action" :file-list="item.fileList1" name="image" @on-remove="onRemove" :show-progress="true"
+									 :show-upload-list='true' @on-success="success"></u-upload>
+								</view>
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="scorll-td">
+							<view class="content">
+								<u-input v-model="item.problemtips" type="textarea" height="100" :auto-height="true" placeholder="请输入问题备注" />
+							</view>
+						</view>
+					</view>
+				</view>
+			</scroll-view>
+
+			<u-action-sheet :list="typeList" v-model="showtype" @click="typeSheetCallback"></u-action-sheet>
+			<u-action-sheet :list="natureList" v-model="show" @click="natureSheetCallback"></u-action-sheet>
+			<!-- 这里是整改项目
+			<scroll-view class="scroll-view_H" scroll-x="true" @scroll="scroll" scroll-left="120">
+				<view class="top">
+					<view class="scorll-th">
+						<view class="srorll-title">
+							问题项
+						</view>
+					</view>
+					<view class="scorll-th">
+						<view class="srorll-title">
+							评分
+						</view>
+					</view>
+					<view class="scorll-th">
+						<view class="srorll-title">
+							问题性质
+						</view>
+					</view>
+					<view class="scorll-th pic">
+						<view class="srorll-title">
+							问题图片
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="srorll-title">
+							问题备注
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="srorll-title">
+							整改措施
+						</view>
+					</view>
+					<view class="scorll-th pic">
+						<view class="srorll-title">
+							整改图片
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="srorll-title">
+							整改备注
+						</view>
+					</view>
+					<view class="scorll-th pic">
+						<view class="srorll-title">
+							整改时间
+						</view>
+					</view>
+				</view>
+				<view v-for="(item,index) in problemList">
+					<view class="scorll-th">
+						<view class="scorll-td">
+							<view class="content">
+								{{item.problem}}
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th">
+						<view class="scorll-td">
+							<view class="content">
+								{{item.number}}
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th ">
+						<view class="scorll-td">
+							<view class="content">
+								{{item.problemnature}}
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th pic">
+						<view class="scorll-td">
+							<view class="content">
+								<view class="imgpart">
+									<u-swiper :list="item.list1" :effect3d="true" @click="previewImage(item.list1)"></u-swiper>
+								</view>
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="scorll-td">
+							<view class="content">
+								{{item.problemtips}}
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="scorll-td">
+							<view class="content">
+								<u-input v-model="item.rectify" type="textarea" height="100" :auto-height="true" placeholder="请输入整改措施" />
+							</view>
+						</view>
+					</view>
+					{{item.showPic}}
+					<view class="scorll-th pic">
+						<view class="scorll-td">
+							<view class="content">
+								<view class="tips" @click="managePic(index,item.list)" v-if="item.showPic">管理图片</view>
+								<view class="tips" @click="finishPic(index,item.fileList)" v-else>管理完成</view>
+								<view class="imgpart" v-if="item.showPic">
+									<u-swiper :list="item.list1" :effect3d="true" @click="previewImage(item.list)"></u-swiper>
+								</view>
+								<view class="upload" v-else>
+									<u-upload :action="action" :file-list="item.fileList" @on-remove="onRemove" :show-progress="false"
+									 :show-upload-list='false'></u-upload>
+								</view>
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th detail">
+						<view class="scorll-td">
+							<view class="content">
+								<u-input v-model="item.rectifytips" type="textarea" height="100" :auto-height="true" placeholder="请输入整改备注" />
+							</view>
+						</view>
+					</view>
+					<view class="scorll-th pic">
+						<view class="scorll-td">
+							<view class="content">
+								<u-input v-model="item.time" type="text" :border="true" :disabled="true" @click="opentime(index)" placeholder="点击选择时间" />
+							</view>
+						</view>
+					</view>
+				</view>
+			</scroll-view>
+			<u-calendar v-model="showtime" mode="date" @change="changetime" max-date='2030-01-01'></u-calendar> -->
+		</view>
+		<view class="action">
+			<view class="bottom">
+				<view class="cancel" @click="cancel">取消</view>
+				<view class="save" @click="save">保存</view>
+			</view>
+		</view>
+	</view>
+
+</template>
+
+<script>
+	import helper from '@/common/helper.js'
+	export default {
+		data() {
+			return {
+				headTitle: 'xxx评分项',
+				show: false,
+				clickindex: '',
+				showtype: false,
+				clicktypeindex: '',
+				showtime: false,
+				timeIndex: '',
+				action: 'http://192.168.1.204:8888/api/v1/uploadImage',
+				// tableList: [{
+				// 	//问题图片
+				// 	showPic1: true,
+				// 	list1: [{
+				// 		image: 'http://pics.sc.chinaz.com/files/pic/pic9/201912/hpic1886.jpg',
+
+				// 	}],
+				// 	fileList1: [
+				// 			{url: "http://pics.sc.chinaz.com/files/pic/pic9/201912/hpic1886.jpg"}
+				// 	],
+				// 	problem: 'xxxx评分项',
+				// 	number: '0',
+				// 	problemtips: '',
+				// 	problemnature: '无'
+				// }],
+				tableList: [],
+				natureList: [{
+						type: 1,
+						text: '一般'
+					},
+					{
+						type: 2,
+						text: '严重'
+					}
+				],
+				typeList: [{
+						type: 2,
+						text: '加分'
+					},
+					{
+						type: 1,
+						text: '减分'
+					}
+				],
+				//整改部分
+				problemList: [{
+					list1: [{
+							image: 'https://cdn.uviewui.com/uview/swiper/1.jpg',
+
+						},
+						{
+							image: 'https://cdn.uviewui.com/uview/swiper/2.jpg',
+
+						},
+						{
+							image: 'https://cdn.uviewui.com/uview/swiper/3.jpg',
+						}
+					],
+					problem: 'xxxx问题',
+					number: '0',
+					problemtips: 'xxxx问题备注',
+					problemnature: '无',
+					rectify: '',
+					showPic: true,
+					list: [{
+						image: 'https://cdn.uviewui.com/uview/swiper/1.jpg',
+
+					}],
+					fileList: [],
+					rectifytips: '',
+					time: '',
+					data: null,
+					index: null,
+					uid: null
+				}]
+			}
+		},
+		onLoad(options) {
+			this.data = JSON.parse(options.obj)
+			this.headTitle=this.data.project+"评分项"
+			 // uni.$on('scoreObj',res=>{  
+			 //       this.data=res.data
+			 //    })
+			//编辑
+			if(this.data.censorRowIssueList.length!=0){
+				let problemtips = null
+				let problemtype = null
+				let problemnature = null
+				let index = -1;
+				//数据组装
+				this.data.censorRowIssueList.forEach(item => {
+					index+=1;
+					if (this.data.scoreList.length >= index) {
+						item.scorename=this.data.scoreList[index].scorename
+					}
+				})
+				//数据解析
+				let arr = []
+				this.data.censorRowIssueList.forEach(item => {
+					problemtips = item.remark
+					if (parseInt(item.type) == 1) {
+						problemtype = "减分"
+					} else {
+						problemtype = "加分"
+					}
+					if (parseInt(item.status) == 1) {
+						problemnature = "一般"
+					} else {
+						problemnature = "严重"
+					}
+					let img1 = []
+					let img2 = []
+					item.censorRowIssueImageList.forEach(val => {
+						img1.push({
+							id: val.id,
+							url:helper.addBaseUrl(val.url),
+							name: val.name
+						})
+						img2.push({
+							id: val.id,
+							image:helper.addBaseUrl(val.url),
+							name: val.name
+						})
+					})
+					arr.push({
+						problem: item.scorename,
+						showPic1: true,
+						list1:img2,
+						fileList1:img1,
+						number:item.score,
+						problemtips:problemtips,
+						problemnature:problemnature,
+						problemtype:problemtype
+					})
+				})
+				this.tableList=arr
+				this.tableList.forEach(item=>{
+					this.data.scoreList.forEach(key => {
+					if(item.problem!=key.scorename){
+						arr.push({
+							problem: key.scorename,
+							showPic1: true,
+							list1:[],
+							fileList1:[],
+							number:0,
+							problemtips:'',
+							problemnature:'',
+							problemtype:''
+						})
+					}
+				})
+				})
+			}else{
+				this.data.scoreList.forEach(key => {
+					this.tableList.push({
+						problem: key.scorename,
+						showPic1: true,
+						list1:[],
+						fileList1:[],
+						number:0,
+						problemtips:'',
+						problemnature:'',
+						problemtype:''
+					})
+			})
+			}
+		},
+		created() {
+			let _this = this;
+			_this.uid = uni.getStorageSync("USER_ID")
+		},
+		methods: {
+			//问题管理图片
+			managePic1(index, list) {
+				this.index = index,
+					this.tableList[index].showPic1 = false;
+				//this.tableList[index].fileList1 = list;
+			},
+			//问题管理完成
+			finishPic1(index, fileList) {
+				this.tableList[index].showPic1 = true;
+				//this.tableList[index].list1 = fileList;
+			},
+			scroll(e) {
+			},
+			//移除图片
+			onRemove(index, lists) {
+				let obj = this.tableList[this.index].fileList1[index]
+				let data = {
+					id: obj.id,
+					uid: this.uid
+				}
+				helper.request(helper.websiteUrl + 'v1/deleteImage', data, 'POST', true, res => {
+					this.tableList[this.index].fileList1 = this.removeAaary(this.tableList[this.index].fileList1, this.tableList[
+						this.index].fileList1[index])
+					this.tableList[this.index].list1 = this.removeAaary(this.tableList[this.index].list1, this.tableList[this.index]
+						.list1[index])
+				})
+			},
+			//删除元素
+			removeAaary(_arr, _obj) {
+				var length = _arr.length;
+				for (var i = 0; i < length; i++) {
+					if (_arr[i] == _obj) {
+						if (i == 0) {
+							_arr.shift(); //删除并返回数组的第一个元素
+							return _arr;
+						} else if (i == length - 1) {
+							_arr.pop(); //删除并返回数组的最后一个元素
+							return _arr;
+						} else {
+							_arr.splice(i, 1); //删除下标为i的元素
+							return _arr;
+						}
+					}
+				}
+			},
+			//预览图片
+			previewImage(fileList) {
+				let list = [];
+				fileList.map(i => {
+					list.push(i.image)
+				})
+				let current = list[0];
+				uni.previewImage({
+					current: current, // 当前显示图片的http链接  
+					urls: list // 需要预览的图片http链接列表  
+				})
+			},
+			chooseNature(index) {
+				this.show = true;
+				this.clickindex = index;
+			},
+			natureSheetCallback(index) {
+				this.tableList[this.clickindex].problemnature = this.natureList[index].text;
+			},
+			chooseType(index) {
+				this.showtype = true;
+				this.clicktypeindex = index;
+			},
+			typeSheetCallback(index) {
+				this.tableList[this.clicktypeindex].problemtype = this.typeList[index].text;
+			},
+			//评分加减
+			// 减少数量
+			sub(index) {
+				this.tableList[index].number--;
+			},
+			// 增加数量
+			add(index) {
+				this.tableList[index].number++;
+			},
+			numberChange(event, index) {
+				this.tableList[index].number = event.detail.value;
+			},
+			blur(event, index) {
+				if (event.detail.value == '') {
+					this.tableList[index].number = 0;
+				}
+			},
+			//整改部分
+			//选择时间
+			opentime(index) {
+				this.showtime = true;
+				this.timeIndex = index;
+			},
+			changetime(e) {
+				this.problemList[this.timeIndex].time = e.result
+			},
+			//整改管理图片
+			managePic(index, list) {
+				this.problemList[index].showPic = false;
+				this.problemList[index].fileList = list;
+			},
+			//整改管理完成
+			finishPic(index, fileList) {
+				this.problemList[index].showPic = true;
+				this.problemList[index].list = fileList;
+			},
+			cancel() {
+				let param ={
+					id:this.data.task_id,
+					uid:this.data.uid
+				}
+			uni.navigateTo({
+				url: '/pages/task/detail?param=' + JSON.stringify(param)
+			})
+			},
+			sure() {
+				uni.navigateBack({
+					delta: 1
+				})
+			},
+			//查询问题的列表数据
+			queryTaskIssueList(id) {
+				let data = {
+					id: id
+				}
+				helper.request(helper.websiteUrl + 'v1/queryTaskIssueList', data, 'POST', true, res => {})
+			},
+			success(data) {
+				let url = data.data.url;
+				this.tableList[this.index].list1.push({
+					title: data.data.name,
+					image: helper.addBaseUrl(url),
+					id: data.data.id
+				})
+				this.tableList[this.index].fileList1.push({
+					name: data.data.name,
+					url: helper.addBaseUrl(url),
+					id: data.data.id
+				})
+				console.log(this.tableList[this.index],'this.tableList[this.index]')
+			},
+			save() {
+				console.log(JSON.stringify(this.tableList))
+				if(this.data.checked){
+					let arr = []
+					this.tableList.forEach(item => {
+						if (item.problemtips != "") {
+							let type = 1
+							if (item.problemtype == '加分') {
+							    type = 2
+							}
+							let status = 1
+							if (item.problemnature == '严重') {
+								status = 2
+							}
+							let img = []
+							item.list1.forEach(val => {
+								img.push(val.id)
+							})
+							let obj = {
+								content: item.problem,
+								type: type,
+								score: item.number,
+								status: status,
+								remark: item.problemtips,
+								images: img
+							}
+							arr.push(obj)
+						}
+					})
+					let data = {
+						row: this.data.id,
+						detail_id: this.data.detail_id,
+						new_score: this.data.total_score,
+						mark: arr
+					}
+					let param = {
+						uid: this.uid,
+						data: JSON.stringify(data)
+					}
+					helper.request(helper.websiteUrl + 'v1/cancelIssueCheckingTask', param, 'POST', true, res => {
+						this.cancel()
+					})
+				}else{
+					let arr = []
+					this.tableList.forEach(item => {
+						if (item.problemtips != "") {
+							let type = 1
+							if (item.problemtype == '加分') {
+								     type = 2
+							}
+							let status = 1
+							if (item.problemnature == '严重') {
+								 status = 2
+							}
+							let img = []
+							item.list1.forEach(val => {
+								img.push(val.id)
+							})
+							let obj = {
+								content: item.problem,
+								type: type,
+								score: item.number,
+								status: status,
+								remark: item.problemtips,
+								images: img
+							}
+							arr.push(obj)
+						}
+					})
+					let data = {
+						row: this.data.id,
+						detail_id: this.data.detail_id,
+						new_score: this.data.total_score,
+						mark: arr
+					}
+					let param = {
+						uid: this.uid,
+						data: JSON.stringify(data)
+					}
+					helper.request(helper.websiteUrl + 'v1/IssueCheckingTask', param, 'POST', true, res => {
+						this.cancel()
+					})
+				}
+			},
+		},
+	}
+</script>
+
+<style lang="less" scoped>
+	.scorll-content {
+		.scroll-view_H {
+			white-space: nowrap;
+			width: 100%;
+
+			.scorll-th {
+				width: 200rpx;
+				display: inline-block;
+
+				.srorll-title {
+					height: 60rpx;
+					line-height: 60rpx;
+					text-align: center;
+					font-size: 28rpx;
+					border: 1px solid #f6f6f6;
+					background: #6ecac3;
+					color: #FFFFFF;
+				}
+
+				.scorll-td {
+					width: 100%;
+					border: 1px solid #f6f6f6;
+					font-size: 28rpx;
+					color: #606266;
+					height: 300rpx;
+					overflow-y: auto;
+
+					.content {
+						padding: 10rpx 20rpx;
+						line-height: 40rpx;
+						white-space: normal;
+
+						.number {
+							display: flex;
+							justify-content: center;
+							align-items: flex-end;
+							width: 200rpx;
+
+							.input {
+								width: 60rpx;
+								height: 60rpx;
+								margin: 0 10rpx;
+								background-color: #f3f3f3;
+
+								input {
+									width: 60rpx;
+									height: 60rpx;
+									display: flex;
+									justify-content: center;
+									align-items: center;
+									text-align: center;
+									font-size: 26rpx;
+								}
+							}
+
+							.sub,
+							.add {
+								width: 60rpx;
+								height: 60rpx;
+								line-height: 60rpx;
+								background-color: #f3f3f3;
+								border-radius: 5rpx;
+								text-align: center;
+
+
+							}
+						}
+
+						.tips {
+							margin-bottom: 10rpx;
+							font-size: 24rpx;
+							color: #FFFFFF;
+							background: #6ecac3;
+							height: 60rpx;
+							line-height: 60rpx;
+							text-align: center;
+							padding: 0 10rpx;
+						}
+					}
+				}
+			}
+
+			.detail {
+				width: 300rpx;
+			}
+
+			.pic {
+				width: 500rpx;
+
+				/deep/uni-swiper {
+					height: 200rpx !important;
+				}
+			}
+		}
+	}
+
+	.action {
+		position: fixed;
+		width: 100%;
+		background: #FFFFFF;
+		bottom: 0;
+		z-index: 99;
+
+		.bottom {
+			display: flex;
+			justify-content: space-around;
+			align-items: center;
+			height: 100rpx;
+			line-height: 100rpx;
+			text-align: center;
+			color: #FFFFFF;
+
+			.cancel {
+				width: 40%;
+				height: 80rpx;
+				line-height: 80rpx;
+				border-radius: 40rpx;
+				background: #cdcdcd;
+			}
+
+			.save {
+				width: 40%;
+				height: 80rpx;
+				line-height: 80rpx;
+				background: #1fac9c;
+				border-radius: 40rpx;
+
+			}
+		}
+
+	}
+</style>

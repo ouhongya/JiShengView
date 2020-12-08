@@ -1,0 +1,38 @@
+<script>
+	export default {
+		onLaunch: function() {
+			console.log('App Launch')
+			let hasLogin=uni.getStorageSync("hasLogin");
+			if(hasLogin){
+
+			uni.navigateTo({
+				url: 'pages/index/index'
+			});
+			}
+	
+		},
+		onShow: function() {
+			console.log('App Show')
+		},
+		onHide: function() {
+			console.log('App Hide')
+		},
+		methods: {
+			getPhoneHeight() {
+				let that = this
+				var Height = '1';
+				uni.getSystemInfo({
+					success: function(res) {
+						Height = res.statusBarHeight
+		
+					}
+				})
+				return Height
+			},
+		}
+	}
+</script>
+
+<style>
+	/*每个页面公共css */
+</style>

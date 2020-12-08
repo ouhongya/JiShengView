@@ -1,0 +1,697 @@
+<template>
+	<view class="task">
+		<a-head bgColor='#4abdb4' :text="taskhead"></a-head>
+		<view class="contain">
+			<view class="content">
+				<u-cell-group>
+					<u-cell-item title="*任务名称" :title-style="titleStyle" arrow-direction="right" :value="taskname" @click="taskchange"></u-cell-item>
+					<u-cell-item title="*检查标准" :title-style="titleStyle" arrow-direction="right" :value="standard" @click="standardchange"></u-cell-item>
+				</u-cell-group>
+			</view>
+			<view class="content">
+				<view class="title">任务信息</view>
+				<u-cell-group>
+					<u-cell-item title="单位名称" :title-style="titleStyle" arrow-direction="right" :value="company" @click="companychange"></u-cell-item>
+					<u-cell-item title="子单位" :title-style="titleStyle" arrow-direction="right" :value="child" @click="childchange"></u-cell-item>
+					<u-cell-item title="任务期限" :title-style="titleStyle" arrow-direction="right" :value="date" @click="datechange"></u-cell-item>
+					<view class="flag" v-if="flag">
+						<u-cell-item title="下发频次" :title-style="titleStyle" arrow-direction="right" :value="frequency" @click="frechange"></u-cell-item>
+						<view class="right" @click="flagChange()">
+							自定义频次
+						</view>
+					</view>
+					<view class="flag" v-else>
+						<u-cell-item title="自定义下发频次" :title-style="titleStyle" arrow-direction="right" :value="selfrequency" @click="selfrechange"></u-cell-item>
+						<view class="right" @click="flagChange()">
+							快捷选择频次
+						</view>
+					</view>
+					<!-- <u-cell-item title="检查地点" :title-style="titleStyle" arrow-direction="right" :value="city" @click="citychange"></u-cell-item> -->
+					<u-cell-item title="检查地址" :title-style="titleStyle" arrow-direction="right" :value="address" @click="addresschange"></u-cell-item>
+					<u-cell-item title="组长" :title-style="titleStyle" arrow-direction="right" :value="leader" @click="leadchange"></u-cell-item>
+				</u-cell-group>
+			</view>
+			<!-- 修改任务名称 -->
+			<u-modal v-model="showtask" title="任务名称" cancel-text="取消" confirm-text="确定" confirm-color="#1fac9c"
+			 :show-cancel-button="true" @confirm="taskconfirm">
+				<view class="slot-content">
+					<view class="model">
+						<u-input v-model="taskpart" placeholder="请输入你的任务名称" type="textarea" :autoHeight="true" />
+					</view>
+				</view>
+			</u-modal>
+			<!-- 修改单位名称-->
+			<u-select v-model="showcompany" mode="single-column" :default-value="showcompanyIndex" :list="selectcompany"
+			 @confirm="companyconfirm" confirm-color="#1fac9c"></u-select>
+			<!-- 修改子单位 -->
+			<u-select v-model="showchild" mode="single-column" :default-value="selectchildIndex" :list="selectchild" @confirm="childconfirm"
+			 confirm-color="#1fac9c"></u-select>
+			<!-- 修改日期 -->
+			<u-calendar v-model="showdate" mode="range" @change="dateconfirm"></u-calendar>
+			<!-- 修改下发频次-->
+			<u-select v-model="showfre" mode="single-column" :default-value="showfreIndex" :list="selectfre" @confirm="freconfirm"
+			 confirm-color="#1fac9c"></u-select>
+			<!-- 自定义频次 -->
+			<u-modal v-model="showselfre" title="自定义下发频次" cancel-text="取消" confirm-text="确定" confirm-color="#1fac9c"
+			 :show-cancel-button="true" @confirm="selfreconfirm">
+				<view class="slot-content">
+					<view class="model">
+						<view class="number">
+							<text>每</text>
+							<u-input v-model="selfrepart" placeholder="请输入数字" type="number" :border="true" /><text>天一次</text>
+						</view>
+
+					</view>
+				</view>
+			</u-modal>
+			<!-- 修改地点 -->
+			<!-- <u-picker mode="region" v-model="showcity" :params="params1" confirm-color="#1fac9c" @confirm="cityconfirm"></u-picker>
+			 -->
+			<!-- 修改详细地址 -->
+			<u-modal v-model="showaddress" title="检查地址" cancel-text="取消" confirm-text="确定" confirm-color="#1fac9c"
+			 :show-cancel-button="true" @confirm="addressconfirm">
+				<view class="slot-content">
+					<view class="model">
+						<u-input v-model="addresspart" placeholder="请输入检查地址" type="textarea" :auto-height="true" />
+					</view>
+				</view>
+			</u-modal>
+			<!-- 修改组长 -->
+			<u-select v-model="selectleadFlag" mode="single-column" :default-value="selectleadIndex" :list="selectlead" @confirm="leadconfirm"
+			 confirm-color="#1fac9c"></u-select>
+		</view>
+		<view class="action">
+			<view class="bottom">
+				<view class="cancel" @click="cancel">取消</view>
+				<view class="save" @click="save">保存</view>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import helper from '@/common/helper.js'
+	export default {
+		name: 'attention',
+		data() {
+			return {
+				taskhead: '新建任务',
+				flag: true,
+				id: '',
+				taskname: '',
+				standard: '',
+				company: '',
+				child: '',
+				date: '',
+				frequency: '',
+				selfrequency: '',
+				selfrequencynum: '',
+				city: '',
+				address: '',
+				leader: '',
+				showtask: false,
+				showcompany: false,
+				showfre: false,
+				showselfre: false,
+				showdate: false,
+				showcity: false,
+				showaddress: false,
+				showlead: false,
+				showchild: false,
+				selectleadFlag: false,
+				taskpart: '',
+				addresspart: '',
+				selfrepart: '',
+				titleStyle: {
+					color: '#333333',
+					fontSize: '30rpx',
+				},
+				selectstandard: [{
+						value: '1',
+						label: 'xxx标准1'
+					},
+					{
+						value: '2',
+						label: 'xxx标准2'
+					}
+				],
+				selectcompany: [],
+				selectchild: [],
+				selectfre: [{
+						value: '0',
+						label: '暂无'
+					},
+					{
+						value: '1',
+						label: '每天一次'
+					},
+					{
+						value: '7',
+						label: '每周一次'
+					},
+					{
+						value: '30',
+						label: '每月一次'
+					}
+				],
+				selectlead: [],
+				params1: {
+					year: true,
+					month: true,
+					day: true
+				},
+				params1: {
+					province: true,
+					city: true,
+					area: true
+				},
+				uid: null,
+				selectchildIndex: [0],
+				showstandardIndex: [0],
+				showfreIndex: [0],
+				selectleadIndex: [0],
+				showcompanyIndex: [0],
+			};
+		},
+		created() {
+			let _this = this;
+			uni.getStorage({
+				key: 'USER_ID',
+				success: function(res) {
+					_this.uid = res.data;
+					_this.queryUnitAll();
+					_this.queryUserBySpecialty();
+				}
+			});
+			uni.$on('frequency', res => {
+				console.log(res, 'res')
+				this.flag = res.flag;
+			})
+		},
+		onLoad(options) {
+			if (options.id) {
+				this.queryTaskToOne(options.id)
+				this.id = options.id;
+				this.taskhead = '编辑任务';
+			} else {
+				this.id = '';
+				this.taskhead = '新建任务';
+			}
+		},
+		methods: {
+			taskchange() {
+				this.showtask = true;
+			},
+			taskconfirm() {
+				this.taskname = this.taskpart;
+				this.showtask = false;
+			},
+			standardchange() {
+				uni.navigateTo({
+					url: '/pages/task/standard'
+				})
+			},
+			companychange() {
+				this.showcompany = true;
+			},
+			companyconfirm(e) {
+				this.company = e[0].label;
+				this.querySiteAll(e[0].value)
+				this.showcompany = false;
+				this.child = ""
+			},
+			childchange() {
+				this.showchild = true;
+			},
+			childconfirm(e) {
+				this.child = e[0].label;
+				this.showchild = false;
+			},
+			datechange() {
+				this.showdate = true;
+			},
+			dateconfirm(e) {
+				this.date = e.startDate + '至' + e.endDate;
+			},
+			frechange() {
+				this.showfre = true;
+			},
+			freconfirm(e) {
+				this.frequency = e[0].label;
+				this.showfre = false;
+			},
+			selfrechange() {
+				this.showselfre = true;
+			},
+
+			selfreconfirm() {
+				this.selfrequency = '每' + this.selfrepart + '天一次';
+				this.selfrequencynum = this.selfrepart;
+				this.showselfre = false;
+			},
+			flagChange() {
+				this.flag = !this.flag
+			},
+			citychange() {
+				this.showcity = true;
+			},
+			cityconfirm(e) {
+				this.city = e.province.label + '-' + e.city.label + '-' + e.area.label;
+				this.showcity = true;
+			},
+			addresschange() {
+				this.showaddress = true;
+			},
+			addressconfirm() {
+				this.address = this.addresspart;
+				this.showaddress = false;
+			},
+			leadchange() {
+				this.selectleadFlag = true;
+			},
+			leadconfirm(e) {
+				this.leader = e[0].label
+				this.selectleadFlag = false;
+			},
+			cancel() {
+				uni.navigateBack({
+					delta: 1
+				})
+				this.taskname = '',
+					this.selectcompany = '',
+					this.selectchild = '',
+					this.date = '',
+					this.address = '',
+					this.selectlead = '',
+					this.selectfre = '',
+					this.selectselfre = '',
+					this.id = '',
+					this.uid = null,
+					this.selectchildIndex = [0],
+					this.showstandardIndex = [0],
+					this.showfreIndex = [0],
+					this.selectleadIndex = [0],
+					this.showcompanyIndex = [0]
+
+			},
+			save() {
+				if (this.id == '') {
+
+					let moduleList = JSON.parse(uni.getStorageSync("USER_MODULE"));
+					console.log(moduleList, "moduleList")
+					let _this = this
+					this.status = 'loading';
+					let unitId = _this.selectcompany.find((v) => {
+						return v.label == _this.company
+					}).value;
+					let siteId = _this.selectchild.find((v) => {
+						return v.label == _this.child
+					}).value;
+					let starTime = _this.date.substring(0, _this.date.indexOf("至"));
+					let endTime = _this.date.substring(_this.date.indexOf("至") + 1, _this.date.length);
+					let groupId = _this.selectlead.find((v) => {
+						return v.label == _this.leader
+					}).value;
+					let frequency = '';
+					if (this.flag) {
+						frequency = this.selectfre.find((v) => {
+							return v.label == this.frequency
+						}).value;
+
+					} else {
+						frequency = this.selfrequencynum;
+					}
+					let param = {
+						uid: _this.uid,
+						userId: _this.uid,
+						name: _this.taskname,
+						unitId: unitId,
+						siteId: siteId,
+						starTime: starTime,
+						endTime: endTime,
+						location: _this.address,
+						groupId: groupId,
+						frequency: frequency,
+						type: 2,
+						taskDetails: moduleList.userModule,
+						excelId: moduleList.excel
+					}
+					let data = {
+						uid: _this.uid,
+						param: JSON.stringify(param)
+					}
+					uni.$off('frequency');
+					helper.request(helper.websiteUrl + 'v1/createdTask', data, 'POST', true, res => {
+						_this.cancel();
+					})
+				} else {
+					this.status = 'loading';
+					let unitId = this.selectcompany.find((v) => {
+						return v.label == this.company
+					}).value;
+					let siteId = this.selectchild.find((v) => {
+						return v.label == this.child
+					}).value;
+					let starTime = this.date.substring(0, this.date.indexOf("至"));
+					let endTime = this.date.substring(this.date.indexOf("至") + 1, this.date.length);
+					let groupId = this.selectlead.find((v) => {
+						return v.label == this.leader
+					}).value;
+
+					let frequency = '';
+					if (this.flag) {
+						frequency = this.selectfre.find((v) => {
+							return v.label == this.frequency
+						}).value;
+
+					} else {
+						frequency = this.selfrequencynum;
+					}
+					let param = {
+						id: this.id,
+						uid: this.uid,
+						userId: this.uid,
+						name: this.taskname,
+						unitId: unitId,
+						siteId: siteId,
+						starTime: starTime,
+						endTime: endTime,
+						location: this.address,
+						groupId: groupId,
+						frequency: frequency,
+						type: 2,
+						taskDetails: [{
+								userId: "399b0eae884a4f89be2781b5fb2sd2s5",
+								module: ["1587be947c2b4381b5dff35a77e81729", "07a3b1f22daa4c62a02d590788aeec36",
+									"bbd8f6e989e148cd886fe9bd0a98da51"
+								]
+							},
+							{
+								userId: "0d91c899da654e69ab34c0aa71943fdf",
+								module: ["7371990307d04027bb1005a7db0a1024", "96285264e4dd4eb0a665a7d66c72e4ea",
+									"90fad342b2ed46a6aa013235cf7f4c24"
+								]
+							}
+						],
+						excelId: ['c309d585e6d7412e93760d521574e1ff']
+					}
+					let data = {
+						uid: this.uid,
+						param: JSON.stringify(param)
+					}
+					//自定义频次或者不是
+					uni.$emit('frequency', {
+						flag: this.flag
+					});
+
+					helper.request(helper.websiteUrl + 'v1/editTask', data, 'POST', true, res => {
+						this.cancel();
+					})
+				}
+			},
+			//获取用户选择的模块值
+			async userModule() {
+				await uni.getStorage({
+					key: 'USER_MODULE',
+					success: function(res) {
+						console.log("来了1")
+						return JSON.parse(res.data)
+					}
+				});
+			},
+			//拉去单位列表
+			queryUnitAll() {
+				let param = {
+					uid: this.uid
+				}
+				helper.request(helper.websiteUrl + 'v1/queryUnitAll', param, 'POST', true, res => {
+					if (res.length != 0) {
+						res.forEach(item => {
+							this.selectcompany.push({
+								value: item.UNIT_ID,
+								label: item.NAME
+							})
+						})
+					}
+				})
+			},
+			//拉去站点列表
+			querySiteAll(id) {
+				let param = {
+					uid: this.uid,
+					id: id
+				}
+				this.selectchild = []
+				helper.request(helper.websiteUrl + 'v1/querySiteAll', param, 'POST', true, response => {
+					if (response.length != 0) {
+						response.forEach(item => {
+							this.selectchild.push({
+								value: item.UNIT_ID,
+								label: item.NAME
+							})
+						})
+					}
+				})
+			},
+			//拉去组长列表
+			queryUserBySpecialty() {
+				if (this.id == '') {
+					let param = {
+						uid: this.uid
+					}
+					helper.request(helper.websiteUrl + 'v1/queryUserBySpecialty', param, 'POST', true, res => {
+						if (res.length != 0) {
+							res.group.forEach(item => {
+								this.selectlead.push({
+									value: item.USER_ID,
+									label: item.NAME
+								})
+							})
+						}
+						let q = -1;
+						this.selectlead.forEach(item => {
+							q++
+							if (this.uid == item.value) {
+								this.selectleadIndex = [q]
+								this.leader = item.label
+							}
+						})
+					})
+				}
+			},
+			//编辑任务回显数据
+			queryTaskToOne(task_id) {
+				let param = {
+					uid: this.uid,
+					task_id: task_id
+				}
+				helper.request(helper.websiteUrl + 'v1/queryTaskToOne', param, 'POST', true, res => {
+					let param = {
+						uid: this.uid,
+						id: res.unit_id
+					}
+					this.selectchild = []
+					helper.request(helper.websiteUrl + 'v1/querySiteAll', param, 'POST', true, response => {
+						response.forEach(item => {
+							this.selectchild.push({
+								value: item.UNIT_ID,
+								label: item.NAME
+							})
+						})
+						this.taskname = res.taskName
+						this.taskpart = res.taskName
+						let str = ''
+						res.normName.forEach(item => {
+							str += item + "、"
+						})
+						this.standard = str.substring(0, str.length - 1)
+						let q = -1;
+						this.selectcompany.forEach(item => {
+							q++;
+							if (item.value == res.unit_id) {
+								this.showcompanyIndex = [q]
+								this.company = item.label
+							}
+						})
+						let w = -1;
+						this.selectchild.forEach(item => {
+							w++;
+							if (item.value == res.site_id) {
+								this.selectchildIndex = [w]
+								this.child = item.label
+							}
+						})
+						this.date = this.datefomate(res.star_time) + "至" + this.datefomate(res.end_time)
+						let e = -1;
+						this.selectfre.forEach(item => {
+							e++;
+							if (res.frequency == item.value) {
+								this.showfreIndex = [e]
+								this.frequency = item.label
+							}
+						})
+						this.address = res.location
+						this.addresspart = res.location
+						helper.request(helper.websiteUrl + 'v1/queryUserBySpecialty', param, 'POST', true, resgroup => {
+							if (resgroup.length != 0) {
+								resgroup.group.forEach(item => {
+									this.selectlead.push({
+										value: item.USER_ID,
+										label: item.NAME
+									})
+								})
+								let q = -1;
+
+								this.selectlead.forEach(item => {
+									q++
+									if (item.value == res.group_id) {
+										this.selectleadIndex = [q]
+										this.leader = item.label
+									}
+								})
+							}
+						})
+					})
+				})
+			},
+			datefomate(value) {
+				if (value == null || value == undefined) {
+					return "";
+				}
+				var date = new Date(value).toLocaleString();
+				let dataTime = date.substring(0, date.indexOf(" "))
+				return dataTime.replace("/", "-").replace("/", "-");
+			}
+		}
+	};
+</script>
+
+<style lang="less" scoped>
+	/deep/.u-cell__value {
+		line-height: 48rpx;
+	}
+
+	.model {
+		padding: 30rpx;
+
+		.number {
+			display: flex;
+			align-items: center;
+			margin: 0 auto;
+
+			text {
+				margin: 0 10rpx;
+				color: #606266;
+			}
+		}
+	}
+
+	.contain {
+		min-height: 100vh;
+		background-color: #fafafa;
+	}
+
+	.head {
+		display: flex;
+		justify-content: space-between;
+		height: 160rpx;
+		line-height: 160rpx;
+		padding: 0 30rpx;
+		background: #ffffff;
+		margin-bottom: 30rpx;
+
+		.title {
+			font-size: 36rpx;
+			font-family: PingFang SC;
+			font-weight: bold;
+			line-height: 160rpx;
+			color: #333333;
+			opacity: 1;
+			// background: #ffffff;
+		}
+
+		.img {
+			display: flex;
+		}
+	}
+
+	image {
+		width: 120rpx;
+		height: 120rpx;
+		border-radius: 50%;
+		margin: 30rpx 10rpx;
+	}
+
+	.content {
+		background: #ffffff;
+		margin-bottom: 30rpx;
+
+		.flag {
+			.right {
+				font-size: 24rpx;
+				color: #999999;
+				padding: 0 30rpx;
+
+			}
+		}
+
+		.title {
+			height: 90rpx;
+			font-size: 36rpx;
+			font-family: PingFang SC;
+			font-weight: bold;
+			line-height: 90rpx;
+			color: #333333;
+			opacity: 1;
+			padding: 0 30rpx;
+
+			text {
+				height: 33rpx;
+				font-size: 24rpx;
+				font-family: PingFang SC;
+				font-weight: 400;
+				line-height: 33rpx;
+				color: #999999;
+				opacity: 1;
+				margin-left: 30rpx;
+			}
+		}
+	}
+
+	.action {
+		position: fixed;
+		width: 100%;
+		background: #FFFFFF;
+		bottom: 0;
+		z-index: 99;
+
+		.bottom {
+			display: flex;
+			justify-content: space-around;
+			align-items: center;
+			height: 100rpx;
+			line-height: 100rpx;
+			text-align: center;
+			color: #FFFFFF;
+
+			.cancel {
+				width: 40%;
+				height: 80rpx;
+				line-height: 80rpx;
+				border-radius: 40rpx;
+				background: #cdcdcd;
+			}
+
+			.save {
+				width: 40%;
+				height: 80rpx;
+				line-height: 80rpx;
+				background: #1fac9c;
+				border-radius: 40rpx;
+
+			}
+		}
+
+	}
+</style>
+

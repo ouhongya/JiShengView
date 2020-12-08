@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "问题明细",
+  "onReachBottomDistance": 50,
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "u-swiper": "/uview-ui/components/u-swiper/u-swiper",
+    "u-upload": "/uview-ui/components/u-upload/u-upload"
+  }
+}

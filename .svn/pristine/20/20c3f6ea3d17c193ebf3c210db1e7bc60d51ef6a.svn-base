@@ -1,0 +1,671 @@
+<template>
+	<view class="standardChange">
+		<a-head bgColor='#4abdb4' text="任务标准"></a-head>
+		<view class="standard">
+			<view class="title">
+				<view class="left">
+					<!-- 选择标准 -->
+				</view>
+				<view class="right">
+					<view class="action">
+						<u-icon name="arrow-downward" color="#FFFFFF" size="28"></u-icon>
+						<view class="txt" @click="onUpload()">
+							导入标准
+						</view>
+					</view>
+					<view class="action">
+						<u-icon name="trash" color="#FFFFFF" size="28"></u-icon>
+						<view class="txt">
+							删除标准
+						</view>
+					</view>
+				</view>
+			</view>
+			<view class="content">
+				<!-- 折叠面板 -->
+				<view class="collapsePart" v-if="collapseList.length>0">
+					<view class="u-collapse-item">
+						<u-swipe-action v-for="(item,index) in collapseList" :key="index" @open="open" :index="index" :options="options"
+						 @click="click" :show="item.show" class="swipe" btn-width="120">
+							<view :hover-stay-time="200" class="u-collapse-head">
+								<block>
+									<view class="u-icon-wrap" @tap="headClick(index)">
+										<u-icon v-if="arrow" :class="{ 'u-arrow-down-icon-active': item.isShow }" class="u-arrow-down-icon" name="arrow-down"></u-icon>
+									</view>
+									<view class="u-collapse-title u-line-1" @tap="headClick(index)">
+										{{item.name}}
+									</view>
+									<view class="action">
+										<u-input v-model="item.person" type="select" :border="true" @click="openPerson(index)" height="70"
+										 placeholder="指派给" />
+									</view>
+								</block>
+							</view>
+							<view class="u-collapse-body" v-if="item.isShow">
+								<view class="u-collapse-content">
+									<view class="" v-for="(i,index1) in item.detailList">
+										<view class="childPart">
+											<view class="left" @click="headClick2(index,index1)">
+												<u-icon :class="{ 'u-arrow-down-icon-active': i.isShow }" class="u-arrow-down-icon" name="arrow-down"></u-icon>{{i.detail}}
+											</view>
+											<view class="action">
+												<u-input v-model="i.person" type="select" :border="true" @click="openchildPerson(index,index1)" height="70"
+												 placeholder="指派给" />
+											</view>
+										</view>
+										<view class="child" v-if="i.child&&i.isShow">
+											<view class="childPart" v-for="(j,index2) in i.child">
+												<view class="left">
+													{{j.detail}}
+												</view>
+												<view class="action">
+													<u-input v-model="j.person" type="select" :border="true" @click="openchild2Person(index,index1,index2)"
+													 height="70" placeholder="指派给" />
+												</view>
+											</view>
+										</view>
+									</view>
+								</view>
+							</view>
+						</u-swipe-action>
+					</view>
+				</view>
+				<view class="empty" v-else>
+					<image src="../../static/nodata.png" mode=""></image>
+					<view class="empty-tips">
+						暂无数据
+					</view>
+				</view>
+			</view>
+			<u-action-sheet :list="personSheetList" v-model="showPersonList" @click="personSheetCallback" border-radius="20"></u-action-sheet>
+			<u-action-sheet :list="personSheetList" v-model="showPersonchildList" @click="personchildSheetCallback"
+			 border-radius="20"></u-action-sheet>
+			<u-action-sheet :list="personSheetList" v-model="showPersonchild2List" @click="personchild2SheetCallback"
+			 border-radius="20"></u-action-sheet>
+			<view class="bottom-action" v-if="collapseList.length>0">
+				<view class="bottom">
+					<view class="cancel" @click="canceleee">取消</view>
+					<view class="save" @click="save">保存</view>
+				</view>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import lFile from '@/components/l-file/l-file.vue'
+	import helper from '@/common/helper.js'
+	export default {
+		data() {
+			return {
+				arrow: true, //是否显示箭头
+				showPersonList: false,
+				showPersonchildList: false,
+				showPersonchild2List: false,
+				openindex: '',
+				openchildindex: '',
+				openchild2index: '',
+				elIdclick: '',
+				clickindex: '',
+				clickindex1: '',
+				personSheetList: [],
+				// collapseList: [{
+				// 	name: '主站',
+				// 	isShow: false,
+				// 	person: '1111',
+				// 	elId: 'elId1',
+				// 	mainheight: '0',
+				// 	show: false,
+				// 	detailList: [{
+				// 			detail: '机房',
+				// 			grade: '400',
+				// 			person: '',
+				// 			isShow: false,
+				// 			child: [{
+				// 					detail: '孩子一',
+				// 					person: ''
+				// 				},
+				// 				{
+				// 					detail: '孩子二',
+				// 					person: ''
+				// 				}
+				// 			]
+				// 		},
+				// 		{
+				// 			detail: '备调系统',
+				// 			grade: '60',
+				// 			person: '',
+				// 			isShow: false,
+				// 		}
+				// 	]
+				// }, 
+				// ],
+				collapseList: [],
+				options: [{
+					text: '删除',
+					style: {
+						backgroundColor: '#fa3534'
+					}
+				}],
+				uid: null,
+				moduleList: null
+			}
+		},
+		created() {
+			let _this = this;
+			this.uid = uni.getStorageSync('USER_ID')
+			_this.queryUserBySpecialty()
+		},
+		onShow() {
+			this.moduleList = uni.getStorageSync('module')
+			uni.$on('module',res=>{
+			     this.moduleList=res.data
+				 this.standard = this.moduleList.name
+			 });  
+			 	this.collapseList = uni.getStorageSync('moduleids')
+				if(this.collapseList.length==0){
+					this.queryExcelOneAndTwo()
+				}
+		},
+		methods: {
+			//获取collapse内容高度
+			// getHeight() {
+			// 	// this.collapseList[this.clickindex].mainheight = '0';
+			// 	this.$nextTick(() => {
+			// 		this.$uGetRect('#' + this.elIdclick).then(res => {
+			// 			this.collapseList[this.clickindex].mainheight = 200;
+			// 		})
+			// 	});
+			// },
+			// 点击collapsehead头部
+			headClick(index) {
+				this.clickindex = index;
+				// this.elIdclick = this.collapseList[index].elId;
+				// this.elIdclick = this.$u.guid();
+				this.collapseList[index].isShow = !this.collapseList[index].isShow;
+				this.collapseList.map((e, index) => {
+					if (index != this.clickindex) {
+						e.isShow = false;
+					}
+				})
+				// this.getHeight();
+				// this.$forceUpdate();
+			},
+			headClick2(index, index1) {
+				this.clickindex = index;
+				this.clickindex1 = index1;
+				this.collapseList[index].detailList[index1].isShow = !this.collapseList[index].detailList[index1].isShow;
+				this.collapseList[index].detailList.map((e, index) => {
+					if (index != this.clickindex1) {
+						e.isShow = false;
+					}
+				})
+			},
+			click(index) {
+				if (this.collapseList[index].flag) {
+					let arr = []
+					let id = this.collapseList[index].id
+					arr.push(id)
+					console.log(arr)
+					let data = {
+						uid: this.uid,
+						id: JSON.stringify(arr)
+					}
+					let _this = this
+					helper.request(helper.websiteUrl + 'v1/deleteExcel', data, 'POST', true, res => {
+						_this.collapseList.splice(index, 1);
+					})
+				} else {
+
+				}
+			},
+			open(index) {
+				this.collapseList[index].show = true;
+				this.collapseList.map((val, idx) => {
+					if (index != idx) this.collapseList[idx].show = false;
+				})
+			},
+			openPerson(index) {
+				this.openindex = index;
+				this.showPersonList = true;
+			},
+			personSheetCallback(index) {
+				let obj = this.collapseList[this.openindex];
+				let name = this.personSheetList[index].text;
+				obj.detailList.forEach(item => {
+					item.person = name;
+					item.child.forEach(val => {
+						val.person = name;
+					})
+				})
+				this.collapseList[this.openindex].person = name;
+			},
+			openchildPerson(index, index1) {
+				this.openindex = index;
+				this.openchildindex = index1;
+				this.showPersonchildList = true;
+			},
+			//第二层的选中效果
+			personchildSheetCallback(index) {
+				let obj = this.collapseList[this.openindex].detailList[this.openchildindex]
+				let name = this.personSheetList[index].text;
+				obj.person = name;
+				obj.child.forEach(item => {
+					item.person = name;
+				})
+				if (this.collapseList[this.openindex].person == "") {
+					this.collapseList[this.openindex].person = name
+				} else {
+					let name = []
+					this.collapseList[this.openindex].detailList.forEach(item => {
+						name.push(item.person)
+						item.child.forEach(val => {
+							name.push(val.person)
+						})
+					})
+					if (this.unique(name).length == 1) {
+						this.collapseList[this.openindex].person = this.personSheetList[index].text;
+					}
+				}
+			},
+			openchild2Person(index, index1, index2) {
+				this.openindex = index;
+				this.openchildindex = index1;
+				this.openchild2index = index2;
+				this.showPersonchild2List = true;
+			},
+			//第三层的选中效果
+			personchild2SheetCallback(index) {
+				let name = this.personSheetList[index].text;
+				this.collapseList[this.openindex].detailList[this.openchildindex].child[this.openchild2index].person = name
+				if (this.collapseList[this.openindex].detailList[this.openchildindex].person == "") {
+					this.collapseList[this.openindex].detailList[this.openchildindex].person = name
+				}
+				if (this.collapseList[this.openindex].person == "") {
+					this.collapseList[this.openindex].person = name
+				}
+				let nameArr = []
+				this.collapseList[this.openindex].detailList[this.openchildindex].child.forEach(item => {
+					if (item != "") {
+						nameArr.push(item.person)
+					}
+				})
+				if (this.unique(nameArr).length == 1) {
+					this.collapseList[this.openindex].detailList[this.openchildindex].person = name
+				}
+			},
+			//保存
+			save() {
+				let excel = []
+				let module = []
+				this.collapseList.map(item => {
+					if (item.person != "") {
+						item.detailList.map(val => {
+							if (val.person != "") {
+								val.child.map(key => {
+									excel.push(item.id)
+									this.personSheetList.forEach(e => {
+										if (key.person == e.text) {
+											module.push({
+												userId: e.id,
+												module: key.id
+											})
+										}
+									})
+								})
+							}
+						})
+					}
+				})
+				let nameIds = []
+				this.changeArr(module).forEach(item => {
+					nameIds.push(item.userId)
+				})
+				let name = this.unique(nameIds);
+				let userModule = []
+				name.forEach(val => {
+					let arr = []
+					this.changeArr(module).forEach(item => {
+						if (val == item.userId) {
+							arr.push(item.module)
+
+						}
+					})
+					userModule.push({
+						userId: val,
+						module: arr
+					})
+				})
+				let excelIds = this.unique(excel)
+				let excelName = '';
+				this.collapseList.forEach(item => {
+					excelIds.forEach(val => {
+						if (item.id == val && item.name != null) {
+							excelName += item.name + "、"
+						}
+					})
+				})
+				let param = {
+					excel: excelIds,
+					userModule: userModule,
+					name: excelName.substring(0, excelName.length)
+				}
+				uni.setStorageSync("module",param)
+				uni.setStorageSync("moduleids",this.collapseList)
+				this.collapseList = []
+				uni.navigateBack({
+					delta: 1
+				})
+			},
+			//取消
+			canceleee() {
+				uni.removeStorageSync('module')
+				uni.removeStorageSync('moduleids')
+				uni.navigateBack({
+					delta: 1
+				})
+			},
+			//获取当前的Excel列表
+			queryExcelOneAndTwo() {
+				let data = {
+					uid: this.uid
+				}
+				let _this = this
+				helper.request(helper.websiteUrl + 'v1/queryExcelOneAndTwo', data, 'POST', true, res => {
+					if (res.length != 0) {
+						let collapseList = []
+						res.forEach(item => {
+							let detailList = [];
+							if (item.normList != null) {
+								item.normList.forEach(val => {
+									let child = [];
+									val.normDetails.forEach(value => {
+										if (value.serial.length == 1) {
+											child.push({
+												id: value.id,
+												detail: value.item,
+												person: ''
+											})
+										}
+									})
+									detailList.push({
+										id: val.id,
+										detail: val.name,
+										grade: '400',
+										person: '',
+										isShow: false,
+										child: child
+									})
+								})
+							}
+							let flag = false;
+							if (item.user_id == this.uid) {
+								flag = true
+							}
+							collapseList.push({
+								id: item.id,
+								name: item.new_name,
+								flag: flag,
+								isShow: false,
+								person: "",
+								elId: 'elId1',
+								mainheight: '0',
+								show: false,
+								detailList: detailList
+							})
+						})
+						_this.collapseList = collapseList
+					}
+				})
+			},
+			//拉去组员列表
+			queryUserBySpecialty() {
+				let param = {
+					uid: this.uid
+				}
+				let _this = this
+				helper.request(helper.websiteUrl + 'v1/queryUserBySpecialty', param, 'POST', true, response => {
+					response.user.forEach(item => {
+						_this.personSheetList.push({
+							text: item.NAME,
+							id: item.USER_ID
+						})
+					})
+				})
+			},
+			//打开上传页面
+			onUpload() {
+				this.$refs.lFile.upload({
+					// #ifdef APP-PLUS
+					// nvue页面使用时请查阅nvue获取当前webview的api，当前示例为vue窗口
+					currentWebview: _this.$mp.page.$getAppWebview(),
+					// #endif
+					//非真实地址，记得更换,调试时ios有跨域，需要后端开启跨域并且接口地址不要使用http://localhost/
+					url: helper.websiteUrl + 'v1/uploadExcel',
+					//默认file,上传文件的key
+					name: 'file',
+					header: {},
+					data: this.uid,
+				});
+			},
+			//上传成功的回调地址
+			onSuccess(res) {
+				let data = JSON.stringify(res)
+				uni.showToast({
+					title: data.data,
+					icon: 'none'
+				})
+				this.queryExcelOneAndTwo();
+			},
+			//数组去重操作
+			unique(arr) {
+				return Array.from(new Set(arr))
+			},
+			//数组对象去重
+			changeArr(arr, key) {
+				var result = [];
+				var obj = {};
+				for (var i = 0; i < arr.length; i++) {
+					if (!obj[arr[i].module]) {
+						result.push(arr[i]);
+						obj[arr[i].module] = true;
+					}
+				}
+				return result;
+			}
+		}
+	}
+</script>
+
+<style lang="less" scoped>
+	.standardChange {
+		.standard {
+			.title {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 10rpx 10rpx 10rpx 30rpx;
+				background: #4abdb4;
+
+				.left {
+					color: #FFFFFF;
+					font-size: 32rpx;
+				}
+
+				.right {
+					display: flex;
+					justify-content: flex-end;
+
+					.action {
+						margin: 0 10rpx;
+						width: 180rpx;
+						border-radius: 10rpx;
+						border: 2rpx solid #FFFFFF;
+						line-height: 50rpx;
+						height: 50rpx;
+						display: flex;
+						justify-content: center;
+
+						.txt {
+							color: #FFFFFF;
+							margin-left: 10rpx;
+							font-size: 28rpx;
+						}
+					}
+				}
+
+			}
+		}
+
+		.content {
+			padding: 30rpx;
+
+			.collapsePart {
+				margin-bottom: 60rpx;
+				border: 2rpx solid #f6f6f6;
+
+				.u-collapse-head {
+					position: relative;
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+					color: #333333;
+					font-size: 28rpx;
+					line-height: 1;
+					padding: 10rpx 6rpx;
+					text-align: left;
+					border-bottom: 2rpx solid #f6f6f6;
+
+					.action {
+						display: flex;
+						justify-content: space-between;
+						margin-left: 20rpx;
+						width: 50%;
+
+						.right {
+							font-size: 26rpx;
+							color: #2979ff;
+							margin: 4rpx;
+						}
+
+						.red {
+							color: #fa3534;
+						}
+					}
+				}
+
+				.u-collapse-title {
+					flex: 1;
+					width: 100%;
+					line-height: 60rpx;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					display: -webkit-box;
+					-webkit-line-clamp: 2;
+					-webkit-box-orient: vertical;
+				}
+
+				.u-arrow-down-icon {
+					transition: all 0.3s;
+					margin-right: 20rpx;
+					margin-left: 14rpx;
+
+				}
+
+				.u-arrow-down-icon-active {
+					transform: rotate(180deg);
+					transform-origin: center center;
+
+				}
+
+				.u-collapse-body {
+					overflow: scroll;
+					transition: all 0.3s;
+
+				}
+
+				.u-collapse-content {
+					overflow: hidden;
+					font-size: 26rpx;
+					color: #666;
+					text-align: left;
+					padding: 10rpx 6rpx;
+
+					.childPart {
+						border-bottom: 2rpx solid #f6f6f6;
+						display: flex;
+						justify-content: space-between;
+						align-items: center;
+						padding: 10rpx 0;
+
+						.left {
+							flex: 1;
+							width: 100%;
+							line-height: 50rpx;
+							overflow: hidden;
+							text-overflow: ellipsis;
+							display: -webkit-box;
+							-webkit-line-clamp: 2;
+							-webkit-box-orient: vertical;
+							padding-left: 60rpx;
+						}
+
+						.action {
+							display: flex;
+							justify-content: space-between;
+							width: 40%;
+							margin-left: 20rpx;
+
+							.right {
+								font-size: 24rpx;
+								color: #2979ff;
+								margin: 4rpx;
+							}
+
+							.red {
+								color: #fa3534;
+							}
+						}
+					}
+				}
+
+			}
+		}
+
+		.bottom-action {
+			position: fixed;
+			width: 100%;
+			background: #FFFFFF;
+			bottom: 0;
+			z-index: 99;
+
+			.bottom {
+				display: flex;
+				justify-content: space-around;
+				align-items: center;
+				height: 100rpx;
+				line-height: 100rpx;
+				text-align: center;
+				color: #FFFFFF;
+
+				.cancel {
+					width: 40%;
+					height: 80rpx;
+					line-height: 80rpx;
+					border-radius: 40rpx;
+					background: #cdcdcd;
+				}
+
+				.save {
+					width: 40%;
+					height: 80rpx;
+					line-height: 80rpx;
+					background: #1fac9c;
+					border-radius: 40rpx;
+
+				}
+			}
+
+		}
+	}
+</style>

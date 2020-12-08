@@ -1,0 +1,585 @@
+<template>
+	<view class="schedule">
+		<u-sticky :offset-top="offset">
+			<u-subsection :list="sublist" :current="curNow" @change="sectionChange" bg-color="#a5deda" button-color="#6ecac3"
+			 active-color="#fff" height="80" inactive-color="#fff"></u-subsection>
+		</u-sticky>
+		<view class="schedulepart">
+			<scroll-view scroll-y style="height:60vh;width: 100%;" @scrolltolower="onreachBottom">
+				<view class="part" v-for="(item,index) in list">
+					<view class="statu">
+						<!--  #ff9900待审核，#2979ff待分配,#19be6b已完结 -->
+						<view class="left green" v-if="item.status==2">
+							已完结
+						</view>
+						<view class="left blue" v-if="item.status==1">
+							待审核
+						</view>
+						<view class="left yellow" v-if="item.status==0">
+							待分配
+						</view>
+						<view class="time">
+							{{$u.timeFormat(item.time, 'yyyy-mm-dd hh:MM:ss')}}
+							<!-- {{item.time?item.time:'暂无时间'}} -->
+						</view>
+					</view>
+					<view class="main">
+						<view class="line">
+							<view class="title">
+								单位名称：
+							</view>
+							<view class="detail">
+								{{item.company?item.company:'暂无'}}
+							</view>
+						</view>
+						<view class="line">
+							<view class="title">
+								所属标准：
+							</view>
+							<view class="detail">
+								{{item.standard?item.standard:'暂无'}}
+
+							</view>
+						</view>
+						<view class="line">
+							<view class="title">
+								子单位：
+							</view>
+							<view class="detail">
+
+								{{item.children?item.children:'暂无'}}
+							</view>
+						</view>
+						<view class="line">
+							<view class="title">
+								问题数量：
+							</view>
+							<view class="detail">
+								{{item.question?item.question:'0'}}
+							</view>
+						</view>
+						<view class="line">
+							<view class="title">
+								整改人员：
+							</view>
+							<view class="detail">
+
+								{{item.person?item.person:'暂无'}}
+							</view>
+						</view>
+						<view class="line">
+							<view class="title">
+								上报人员：
+							</view>
+							<view class="detail">
+								{{item.report?item.report:'暂无'}}
+							</view>
+						</view>
+					</view>
+
+					<!-- <view class="prograss">
+						<view class="prograss-part">
+							<view class="prograss-item" v-for="(i,numindex) in item.numList">
+								<view class="dots">
+
+								</view>
+								<u-line color="#18B566" />
+								<view class="tips" v-if="showindex">
+									<view class="">{{i.title}}</view>
+									<view class="">{{i.name}}</view>
+									<view class="">{{i.date}}</view>
+								</view>
+							</view>
+						</view>
+					</view> -->
+					<view class="action-part">
+						<view class="see">
+							查看
+						</view>
+						<view class="allot" v-if="item.status==0">
+							分配
+						</view>
+						<view class="allot" @click="pass" v-if="item.status==1">
+							通过
+						</view>
+						<view class="refuse" v-if="item.status==1" @click="refuse()">
+							驳回
+						</view>
+					</view>
+				</view>
+				<u-modal v-model="show" @confirm="confirm" ref="uModal" :async-close="true" :show-cancel-button="true"
+				 :confirm-style="{'color':'#fa3534'}" title="驳回理由" z-index="99">
+					<view class="slot-content">
+						<view class="model">
+							<u-input v-model="reason" type="textarea" :border="true" :height="200" :auto-height="true" placeholder="请输入驳回理由" />
+						</view>
+					</view>
+				</u-modal>
+				<u-loadmore @loadmore="loadmore" bg-color="none" :status="status" :icon-type="iconType" margin="30" :load-text="loadText"
+				 v-if="list.length >=1" />
+			</scroll-view>
+
+		</view>
+		<u-top-tips ref="uTips"></u-top-tips>
+	</view>
+</template>
+
+<script>
+	import helper from '@/common/helper.js'
+	export default {
+		props: {
+			offset: {
+				type: Number,
+				default: 0
+			},
+		},
+		data() {
+			return {
+				// 头部导航
+				curNow: 0, //当前选中
+				subIndex: 0, //当前选中内容
+				sublist: [{
+						name: '待处理'
+					},
+					{
+						name: '已处理'
+					}
+				],
+				list: [{
+						status: 2,
+						time: '1581170184',
+						company: '国家巴中供电公司',
+						standard: '主站调度数据网',
+						children: 'xxx变电站',
+						question: '89',
+						person: '张三',
+						report: '李四',
+						numList: [{
+								title: '检查人员',
+								name: '张三',
+								date: '2013-5-13'
+							},
+							{
+								title: '上报人员',
+								name: '张三',
+								date: '2013-5-13'
+							},
+							{
+								title: '分配整改',
+								name: '张三',
+								date: '2013-5-13'
+							},
+							{
+								title: '整改人员',
+								name: '张三',
+								date: '2013-5-13'
+							},
+							{
+								title: '审核人员',
+								name: '张三',
+								date: '2013-5-13'
+							},
+						]
+					},
+					{
+						status: 1,
+						time: '2016-1-12',
+						company: '国家巴中供电公司',
+						standard: '主站调度数据网',
+						children: 'xxx变电站',
+						question: '89',
+						person: '张三',
+						report: '李四',
+						numList: [{
+								title: '检查人员',
+								name: '张三',
+								date: '2013-5-13'
+							},
+							{
+								title: '上报人员',
+								name: '张三',
+								date: '2013-5-13'
+							},
+							{
+								title: '分配整改',
+								name: '张三',
+								date: '2013-5-13'
+							},
+							{
+								title: '整改人员',
+								name: '张三',
+								date: '2013-5-13'
+							},
+							{
+								title: '审核人员',
+								name: '张三',
+								date: '2013-5-13'
+							},
+						]
+					},
+					{
+						status: 0,
+						time: '2016-1-12',
+						company: '国家巴中供电公司',
+						standard: '主站调度数据网',
+						children: 'xxx变电站',
+						question: '89',
+						person: '张三',
+						report: '李四',
+						numList: [{
+								title: '检查人员',
+								name: '张三',
+								date: '2013-5-13'
+							},
+							{
+								title: '上报人员',
+								name: '张三',
+								date: '2013-5-13'
+							},
+							{
+								title: '分配整改',
+								name: '张三',
+								date: '2013-5-13'
+							},
+							{
+								title: '整改人员',
+								name: '张三',
+								date: '2013-5-13'
+							},
+							{
+								title: '审核人员',
+								name: '张三',
+								date: '2013-5-13'
+							},
+						]
+					},
+				],
+				showindex: false,
+				show: false,
+				reason: '',
+				// 分页
+				status: 'loadmore', // 下拉加载状态
+				iconType: 'flower',
+				loadText: {
+					loadmore: '点击或上拉加载更多',
+					loading: '正在加载...',
+					nomore: '我也是有底线的'
+				},
+				pages: 1, //实际页数
+				pageNum: 1, //当前下拉加载页数
+				pageSize: 10, //每页的条数
+			}
+		},
+		created() {
+			this.queryUserPending();
+		},
+		methods: {
+			getlist() {
+				this.status = 'loading';
+				const recordsList = this.list; //模拟请求到的数据
+				if (this.pageNum > 1) {
+					this.list = this.list.concat(recordsList);
+				} else {
+					this.list = recordsList;
+					this.status = 'nomore';
+				}
+				uni.stopPullDownRefresh();
+				this.pages = 3; //模拟页数最大等于3
+				this.pageNum++;
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+				}
+			},
+			// 上拉加载
+			onreachBottom(e) {
+				if (this.pageNum >= this.pages) {
+					this.status = 'nomore';
+				}else{
+					this.pageNum+=1;
+					if(this.curNow==0)this.queryUserPending();
+					if(this.curNow==1)this.queryUserProcessed();
+				}
+			},
+			//下拉刷新
+			loadmore() {
+				if (this.pageNum >= this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				// 初始化数据
+				this.status = 'loadmore';
+				this.pageNum = 1;
+				this.publiclist = [];
+				if(this.curNow==0)this.queryUserPending();
+				if(this.curNow==1)this.queryUserProcessed();
+			},
+			//通过
+			pass(id){
+				let uid = null;
+				uni.getStorage({key: 'USER_ID',success: function (res) {uid=res.data;}});
+				let param = {
+					uid:uid,
+					id:id
+				}
+				helper.request(helper.websiteUrl + 'v1/pass', param, 'POST', true, res => {
+					if(curNow==0)this.queryUserPending();
+					if(curNow==1)this.queryUserProcessed();
+				})
+			},
+			//驳回
+			refuse() {
+				this.show = true;
+			},
+			//确认驳回
+			confirm() {
+				if (!this.reason) {
+					uni.showToast({
+						title: '驳回理由不能为空',
+						icon: 'none'
+					})
+					this.$refs.uModal.clearLoading();
+					this.reason=null;
+					return;
+				} else {
+					let uid = null;
+					uni.getStorage({key: 'USER_ID',success: function (res) {uid=res.data;}});
+					let param = {
+						uid:uid,
+						content:this.reason,
+						id:暂无
+					}
+					helper.request(helper.websiteUrl + 'v1/reject', param, 'POST', true, res => {
+						if(curNow==0)this.queryUserPending();
+						if(curNow==1)this.queryUserProcessed();
+					})
+					this.reason;
+					this.show = false;
+				}
+			},
+			//待处理数据拉去
+			queryUserPending(){
+				this.getlist();
+				// this.status = 'loading';
+				// let uid = null;
+				// uni.getStorage({key: 'USER_ID',success: function (res) {uid=res.data;}});
+				// let param = {
+				// 	uid:uid,
+				// 	page:this.pageNum,
+				// 	size:this.pageSize
+				// }
+				// helper.request(helper.websiteUrl + 'v1/queryUserPending', param, 'POST', true, res => {
+				// 	if(res.length!=0){
+				// 		this.pages=parseInt(res[0].total)
+				// 		const recordsList = res; //模拟请求到的数据
+				// 		if (this.pageNum > 1) {
+				// 			this.list = this.list.concat(recordsList);
+				// 		} else {
+				// 			this.list = recordsList;
+				// 			this.status = 'nomore';
+				// 		}
+				// 	}
+				// })
+			},
+			//已处理处理数据拉去
+			queryUserProcessed(){
+				let uid = null;
+				uni.getStorage({key: 'USER_ID',success: function (res) {uid=res.data;}});
+				let param = {
+					uid:'3cec73a7cc8a4cb79e3f6ccc7fc8858c',
+					page:this.pageNum,
+					size:this.pageSize
+				}
+				helper.request(helper.websiteUrl + 'v1/queryUserProcessed', param, 'POST', true, res => {
+					if(res.length!=0){
+						this.pages=parseInt(res[0].total)
+					}
+				})
+			},
+			sectionChange(curNow){
+				this.status = 'nomore';
+				this.pageNum = 1;
+				this.pages = 1;
+				this.pageSize = 1;
+				this.list =[];
+				if(curNow==0)this.queryUserPending();
+				if(curNow==1)this.queryUserProcessed();
+			}
+		}
+	}
+</script>
+
+<style lang="less" scoped>
+	/deep/.u-content {
+		border-radius: 10rpx 0 0 10rpx !important;
+	}
+
+	/deep/.u-item {
+		height: 100%;
+		padding: 0;
+	}
+
+	/deep/.u-item-bg {
+		height: 100%;
+		border-radius: 0;
+		bottom: 0;
+	}
+
+	/deep/.u-subsection {
+		padding: 0 !important;
+		border-radius: 0 !important;
+	}
+
+	/deep/.u-time-axis {
+		display: flex;
+	}
+
+	.model {
+		padding: 30rpx;
+	}
+
+	.schedule {
+		background: #F8F8F8;
+	}
+
+	.schedulepart {
+		padding: 20rpx;
+
+		.part {
+			margin-bottom: 20rpx;
+			border-radius: 20rpx;
+			border: 2rpx solid #f6f6f6;
+			background: #FFFFFF;
+			position: relative;
+
+			.statu {
+				display: flex;
+				justify-content: space-between;
+				height: 60rpx;
+				line-height: 60rpx;
+				align-items: center;
+
+				.left {
+					background: #19be6b;
+					color: #FFFFFF;
+					font-size: 30rpx;
+					width: 160rpx;
+					text-align: center;
+					border-radius: 20rpx 0 20rpx 0;
+				}
+
+				.green {
+					background: #19be6b;
+				}
+
+				.blue {
+					background: #2979FF;
+				}
+
+				.yellow {
+					background: #FF9900;
+				}
+
+				.time {
+					color: #999999;
+					font-size: 28rpx;
+					margin-right: 10rpx;
+				}
+			}
+
+			.main {
+				padding: 20rpx;
+
+				.line {
+					height: 50rpx;
+					line-height: 50rpx;
+					display: flex;
+					justify-content: flex-start;
+					align-items: center;
+					font-size: 30rpx;
+
+					.detail {
+						width: 100%;
+						flex: 1;
+						text-overflow: ellipsis;
+						overflow: hidden;
+						white-space: nowrap;
+						color: #606266;
+					}
+
+					.title {
+						color: #333333;
+						margin-right: 20rpx;
+						width: 150rpx;
+					}
+				}
+			}
+
+			.prograss {
+				margin: 10rpx 0;
+				width: 100%;
+				padding: 20rpx;
+
+				.prograss-part {
+					display: flex;
+					justify-content: flex-start;
+
+					.prograss-item {
+						display: flex;
+						justify-content: center;
+						align-items: center;
+						width: 20%;
+
+						.dots {
+							width: 30rpx;
+							height: 30rpx;
+							border-radius: 40rpx;
+							background: #18B566;
+						}
+					}
+				}
+
+
+
+			}
+
+			.action-part {
+				display: flex;
+				justify-content: flex-end;
+				font-size: 28rpx;
+				position: absolute;
+				top: 300rpx;
+				width: 100%;
+
+				.see {
+					width: 100rpx;
+					text-align: center;
+					border: 2rpx solid #2b85e4;
+					color: #2b85e4;
+					margin-right: 20rpx;
+					padding: 6rpx 0;
+					border-radius: 10rpx;
+				}
+
+				.allot {
+					width: 100rpx;
+					text-align: center;
+					border: 2rpx solid #18b566;
+					color: #18b566;
+					margin-right: 20rpx;
+					padding: 6rpx 0;
+					border-radius: 10rpx;
+				}
+
+				.refuse {
+					width: 100rpx;
+					text-align: center;
+					border: 2rpx solid #dd6161;
+					color: #dd6161;
+					margin-right: 20rpx;
+					padding: 6rpx 0;
+					border-radius: 10rpx;
+				}
+			}
+		}
+	}
+</style>

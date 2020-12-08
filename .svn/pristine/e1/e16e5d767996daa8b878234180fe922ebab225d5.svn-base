@@ -1,0 +1,78 @@
+{
+	"easycom": {
+		"^u-(.*)": "@/uview-ui/components/u-$1/u-$1.vue"
+	},
+	"pages": [
+		//pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		{
+			"path": "pages/login/login",
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "首页",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": false
+			}
+		}
+        ,{
+            "path" : "pages/public/public",
+            "style" : {
+				"navigationBarTitleText": "公告列表",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": true
+			}
+        },
+		{
+		    "path" : "pages/public/newpublic",
+		    "style" : {
+				"navigationBarTitleText": "新增公告",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+		    "path" : "pages/public/range",
+		    "style" : {
+				"navigationBarTitleText": "通知范围",
+				"onReachBottomDistance": 50,
+				"enablePullDownRefresh": true
+			}
+		}
+    ],
+	// "tabBar": {
+	// 	"color": "#7A7E83",
+	// 	"selectedColor": "#007AFF",
+	// 	"borderStyle": "black",
+	// 	"backgroundColor": "#ffffff",
+	// 	"list": [{
+	// 			"pagePath": "pages/index/index",
+	// 			"iconPath": "/static/tabbar/index.png",
+	// 			"selectedIconPath": "/static/tabbar/index_selected.png",
+	// 			"text": "项目"
+	// 		}
+	// 	]
+	// },
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "uni-app",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"navigationStyle": "custom",
+		"backgroundColor": "#F8F8F8"
+		//  "rpxCalcMaxDeviceWidth": 750, 
+		// "rpxCalcBaseDeviceWidth": 375, 
+		// "rpxCalcIncludeWidth": 750 
+	},
+	"condition": { //模式配置，仅开发期间生效
+		"current": 0, //当前激活的模式(list 的索引项)
+		"list": [{
+			"name": "", //模式名称
+			"path": "", //启动页面，必选
+			"query": "" //启动参数，在页面的onLoad函数里面得到
+		}]
+	}
+
+}

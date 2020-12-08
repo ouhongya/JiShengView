@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "公告列表",
+  "onReachBottomDistance": 50,
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "u-swipe-action": "/uview-ui/components/u-swipe-action/u-swipe-action",
+    "u-line": "/uview-ui/components/u-line/u-line",
+    "u-loadmore": "/uview-ui/components/u-loadmore/u-loadmore"
+  }
+}

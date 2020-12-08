@@ -1,0 +1,16 @@
+{
+  "component": true,
+  "usingComponents": {
+    "u-sticky": "/uview-ui/components/u-sticky/u-sticky",
+    "u-subsection": "/uview-ui/components/u-subsection/u-subsection",
+    "u-section": "/uview-ui/components/u-section/u-section",
+    "u-modal": "/uview-ui/components/u-modal/u-modal",
+    "u-input": "/uview-ui/components/u-input/u-input",
+    "u-loadmore": "/uview-ui/components/u-loadmore/u-loadmore",
+    "u-popup": "/uview-ui/components/u-popup/u-popup",
+    "u-icon": "/uview-ui/components/u-icon/u-icon",
+    "u-action-sheet": "/uview-ui/components/u-action-sheet/u-action-sheet",
+    "u-calendar": "/uview-ui/components/u-calendar/u-calendar",
+    "u-toast": "/uview-ui/components/u-toast/u-toast"
+  }
+}

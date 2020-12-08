@@ -1,0 +1,595 @@
+<template>
+	<view class="taskdetail">
+		<a-head bgColor='#4abdb4' :text="taskhead"></a-head>
+		<u-sticky :offset-top="0">
+			<view class="table-top">
+				<u-table bg-color="#f5f6f8">
+					<u-tr>
+						<u-td width="10%">序号</u-td>
+						<u-td width="20%">状态</u-td>
+						<u-td width="30%">子准则</u-td>
+						<u-td width="30%">检查模块</u-td>
+						<u-td width="10%">分值</u-td>
+					</u-tr>
+				</u-table>
+			</view>
+
+		</u-sticky>
+		<view class="empty" v-if="list.length<=0">
+			<image src="../../static/nodata.png" mode=""></image>
+			<view class="empty-tips">
+				暂无数据
+			</view>
+		</view>
+		
+		<view class="table-part" v-else>			
+			<u-table v-for="(item,index) in list">
+				<u-tr>
+					<u-td width="10%">
+						<view @click="open(index)">{{item.serial}}</view>
+					</u-td>
+
+					<u-td width="20%">
+						<view @click="open(index)">
+							<view class="state grey" v-if="item.state==1">
+								未开始
+							</view>
+							<view class="state yellow" v-if="item.state==2">
+								检查中
+							</view>
+							<view class="state green" v-if="item.state==3">
+								已完成
+							</view>
+							<view class="detail" v-if="item.state!=1">
+								<view class="title">
+									进度:<text class="txt">
+										{{item.prograss}}
+									</text>
+								</view>
+								<view class="title">
+									问题数:<text class="red">
+										{{item.problem}}
+									</text>
+								</view>
+								<view class="title">
+									扣分:<text class="red">
+										-{{item.lostgrade}}
+									</text>
+								</view>
+								<view class="title">
+									得分:<text class="txt">
+										{{item.gotgrade}}
+									</text>
+								</view>
+							</view>
+						</view>
+					</u-td>
+					<u-td width="30%">
+						<view @click="open(index)">{{item.childname}}</view>
+					</u-td>
+					<u-td width="30%">
+						<view @click="open(index)">{{item.detail}}</view>
+					</u-td>
+					<u-td width="10%">
+						<view @click="open(index)">{{item.totalgrade}}</view>
+					</u-td>
+				</u-tr>
+				<view class="scorll-content" v-if="item.show&&item.tableList.length>0">
+					<scroll-view class="scroll-view_H" scroll-x="true" @scroll="scroll" scroll-left="120">
+						<view class="top">
+							<view class="scorll-th">
+								<view class="srorll-title">
+									评判项目
+								</view>
+							</view>
+							<view class="scorll-th detail">
+								<view class="srorll-title">
+									评判内容
+								</view>
+							</view>
+							<view class="scorll-th detail">
+								<view class="srorll-title">
+									检查方式
+								</view>
+							</view>
+							<view class="scorll-th detail">
+								<view class="srorll-title">
+									评分项
+								</view>
+							</view>
+
+							<view class="scorll-th">
+								<view class="srorll-title">
+									总分
+								</view>
+							</view>
+							<view class="scorll-th">
+								<view class="srorll-title">
+									得分
+								</view>
+							</view>
+							<view class="scorll-th">
+								<view class="srorll-title">
+									完成检查
+								</view>
+							</view>
+						</view>
+						<view v-for="(i,index1) in  item.tableList" :key="index1" class="child">
+							<view class="scorll-th">
+								<view class="scorll-td">
+									<view class="content">
+										{{i.project}}
+									</view>
+								</view>
+							</view>
+							<view class="scorll-th detail">
+								<view class="scorll-td">
+									<view class="content">
+										{{i.content}}
+									</view>
+								</view>
+							</view>
+							<view class="scorll-th detail">
+								<view class="scorll-td">
+									<view class="content">
+										<view class="way-part">
+											<view class="wayname">
+												检查方式：
+												<view class="name">
+													{{i.taskway}}
+												</view>
+											</view>
+											<view class="wayname">
+												必要资料：
+												<view class="name">
+													{{i.necessity}}
+												</view>
+											</view>
+										</view>
+									</view>
+								</view>
+							</view>
+							<view class="scorll-th detail">
+								<view class="scorll-td">
+									<view class="content" @click="todetail(index,index1)">
+										<view class="score-part" v-for="(j,index2) in i.scoreList">
+											<view class="scorename">
+												{{j.scorename}}
+											</view>
+											<view class="score" :class="j.score>0?'normal':'red'">
+												{{i.totalscore}}
+											</view>
+										</view>
+									</view>
+								</view>
+							</view>
+							<view class="scorll-th">
+								<view class="scorll-td">
+									<view class="content">
+										{{i.totalscore}}
+									</view>
+								</view>
+							</view>
+							<view class="scorll-th">
+								<view class="scorll-td">
+									<view class="content">
+										{{i.gotscore}}
+									</view>
+								</view>
+							</view>
+							<view class="scorll-th">
+								<view class="scorll-td">
+									<view class="content">
+										<u-checkbox-group>
+											<u-checkbox @change="checkboxChange(i,index,index1)" v-model="i.checked" shape="circle" :name="item.name"></u-checkbox>
+										</u-checkbox-group>
+									</view>
+								</view>
+							</view>
+						</view>
+					</scroll-view>
+				</view>
+			</u-table>
+		</view>
+	</view>
+</template>
+
+<script>
+	import helper from '@/common/helper.js'
+	export default {
+		name: 'taskdetail',
+		data() {
+			return {
+				scrollTop: 0,
+				old: {
+					scrollTop: 0
+				},
+				taskhead: '检查任务',
+				list: [],
+				task_id:null,
+				uid:null
+			}
+		},
+		onLoad(option) {
+			let  param = JSON.parse(option.param);
+			this.taskhead=param.name;
+			this.task_id=param.id,
+			this.uid=param.uid,
+			this.checkingTaskList({
+				task_id: param.id,
+				uid:param.uid
+			})
+			
+			uni.$off('scoreObj')
+		},
+		methods: {
+			// 点击检查完成按钮
+			checkboxChange(e, index,index1) {
+				let data =  {
+					id: e.id,
+					score: e.totalscore,
+					detail_id: e.detail_id
+				}
+				if (!e.checked) {
+						helper.request(helper.websiteUrl + 'v1/cancelCheckingTask',data, 'POST', true, res => {
+						let num = 0;
+						this.list[index].tableList.forEach(item => {
+							if (item.checked) {
+								num+=1;
+							}
+						})
+						if (num == 0) {
+							this.list[index].state = 1 //未开始
+						} else {
+							if (this.list[index].tableList.length > num) {
+								this.list[index].state = 2 //检查中
+							}
+						}
+						this.list[index].gotgrade -= e.total_score//得分
+						this.list[index].tableList[index1].gotscore = 0
+						this.list[index].lostgrade=0
+					})
+				} else {
+					helper.request(helper.websiteUrl + 'v1/checkingTask', data, 'POST', true, res => {
+						let num = 0;
+						this.list[index].tableList.forEach(item => {
+							if (item.checked) {
+								num+=1;
+							}
+						})
+						if (this.list[index].tableList.length > num) {
+							this.list[index].state = 2 //状态
+						}
+						if (this.list[index].tableList.length == num) {
+							this.list[index].state = 3 //状态
+						}
+						this.list[index].gotgrade += e.total_score //得分
+						this.list[index].tableList[index1].gotscore= e.total_score
+						this.list[index].lostgrade=0
+					})
+				}
+			},
+			scroll: function(e) {
+				this.old.scrollTop = e.detail.scrollTop
+			},
+			open(index) {
+				this.list[index].show = !this.list[index].show;
+				this.list.map((val, idx) => {
+					if (index != idx) this.list[idx].show = false;
+				})
+			},
+			todetail(index,index1) {
+				let obj = this.list[index].tableList[index1];
+				obj.task_id=this.task_id
+				obj.uid=this.uid
+				// uni.$emit('scoreObj', {  
+				//                 data:obj
+				//             });
+				console.log(obj,'obj')
+				uni.navigateTo({
+					url: '/pages/task/score?obj='+JSON.stringify(obj)
+				})
+				// uni.navigateTo({
+				// 	url: '/pages/task/score'
+				// })
+			},
+			//拉取检查列表数据
+			checkingTaskList(data) {
+				this.list=[];
+				helper.request(helper.websiteUrl + 'v1/checkingTaskList', data, 'POST', true, res => {
+					res.forEach(key => {
+						let tableList = []
+						let score = 0;
+						let Iscore = 0;
+						key.censorRowList.forEach(val => {
+							let content = val.row_untitled
+							let scoreList = []
+							if (content.indexOf("；") != -1) {
+								let arr = content.split("；")
+								arr.forEach(item => {
+									if (item.indexOf("分/处") != -1) {
+										let index1 = item.indexOf("扣")
+										let index2 = item.indexOf("分/处")
+										scoreList.push({
+											score: item.substring(index1 + 1, index2),
+											scorename: item
+										})
+									} else {
+										let index1 = item.indexOf("扣")
+										let index2 = item.indexOf("分")
+										scoreList.push({
+											score: item.substring(index1 + 1, index2),
+											scorename: item
+										})
+									}
+								})
+							} else {
+								if (content.indexOf("分/处") != -1) {
+									let index1 = content.indexOf("扣")
+									let index2 = content.indexOf("分/处")
+									scoreList = [{
+										score: content.substring(index1 + 1, index2),
+										scorename: content
+									}];
+								} else {
+									let index1 = content.indexOf("扣")
+									let index2 = content.indexOf("分")
+									scoreList = [{
+										score: content.substring(index1 + 1, index2),
+										scorename: content
+									}];
+								}
+							}
+							if (val.status == 1) {
+								tableList.push({
+									id: val.id,
+									status: val.status,
+									total_score: val.total_score,
+									score: val.score,
+									issue: val.issue,
+									detail_id: val.task_detail_id,
+									project: val.row_item, //评判项目
+									content: val.row_content, //评判内容
+									taskway: val.row_MODE, //检查方式
+									necessity: val.row_standard, //必要资料
+									scoreList: scoreList,
+									totalscore: val.total_score,
+									gotscore: val.score,
+									checked: false,
+									censorRowIssueList:val.censorRowIssueList
+								})
+							}
+							if (val.status == 3) {
+								tableList.push({
+									id: val.id,
+									status: val.status,
+									total_score: val.total_score,
+									score: val.score,
+									issue: val.issue,
+									detail_id: val.task_detail_id,
+									project: val.row_item, //评判项目
+									content: val.row_content, //评判内容
+									taskway: val.row_MODE, //检查方式
+									necessity: val.row_standard, //必要资料
+									scoreList: scoreList,
+									totalscore: val.row_total_score,
+									gotscore: val.score,
+									checked: true,
+									censorRowIssueList:val.censorRowIssueList
+								})
+							}
+							if(val.censorRowIssueList.length!=0){
+								val.censorRowIssueList.forEach(item=>{
+									console.log(item.score)
+									score+=parseInt(item.score);
+								})
+							}
+							Iscore+=val.score
+						})
+						if (key.serial.length == 1) {
+							this.list.push({
+								state: key.status,
+								childname: key.nname,
+								detail: key.item,
+								totalgrade: key.task_total_score,
+								serial: key.serial,
+								prograss: '20',
+								problem: key.total_issue,
+								lostgrade: score,
+								gotgrade:Iscore,
+								show: false,
+								tableList: tableList
+							})
+						}
+					})
+					this.list.sort((a, b) => {
+						return parseInt(a.serial) - parseInt(b.serial)
+					})
+				})
+			},
+			//正常检查任务
+			checkingTask(data) {
+				helper.request(helper.websiteUrl + 'v1/checkingTask', data, 'POST', true, res => {})
+			},
+			//取消检查任务
+			cancelCheckingTask(data) {
+				helper.request(helper.websiteUrl + 'v1/cancelCheckingTask', data, 'POST', true, res => {})
+			}
+		}
+	}
+</script>
+	<style lang="scss" scoped>
+		.scorll-content {
+			padding: 0;	
+			.child{
+				height: 300rpx;
+			}
+			.scroll-view_H {
+				white-space: nowrap;
+				width: 100%;
+				.scorll-th {
+					display: inline-block;
+					width: 200rpx;	
+					.srorll-title {
+						height: 60rpx;
+						line-height: 60rpx;
+						text-align: center;
+						font-size: 28rpx;
+						border: 1px solid #f6f6f6;
+						background: #A0CFFF;
+						color: #FFFFFF;	
+					}
+					.scorll-td {
+						width: 100%;
+						border: 1px solid #f6f6f6;
+						font-size: 28rpx;
+						color: #606266;
+						height: 300rpx;
+						white-space: normal;
+						overflow-y: auto;
+	
+						.content {
+							padding: 10rpx 20rpx;
+							line-height: 40rpx;
+							white-space: normal;
+	
+							.way-part {
+								.wayname {
+									color: #4abdb4;
+									width: 80%;
+									line-height: 40rpx;
+	
+									.name {
+										color: #606266;
+									}
+								}
+							}
+	
+							.score-part {
+								display: flex;
+								justify-content: space-between;
+								font-size: 28rpx;
+								margin-bottom: 10rpx;
+	
+								.scorename {
+									color: #333333;
+									width: 80%;
+									line-height: 40rpx;
+								}
+	
+								.score {
+									font-size: 24rpx;
+	
+								}
+	
+								.normal {
+									color: #18B566;
+								}
+	
+								.red {
+									color: red;
+								}
+	
+	
+							}
+	
+							.tips {
+								margin-bottom: 10rpx;
+								font-size: 24rpx;
+								color: #FFFFFF;
+								background: #ccebe9;
+								height: 60rpx;
+								line-height: 60rpx;
+								border-radius: 0 0 10rpx 10rpx;
+								text-align: center;
+								padding: 0 10rpx;
+							}
+						}
+					}
+				}
+	
+				.detail {
+					width: 300rpx;
+					margin: 0 !important;
+				}
+	
+				.pic {
+					width: 500rpx;
+	
+					/deep/uni-swiper {
+						height: 200rpx !important;
+					}
+				}
+			}
+		}
+	
+		.taskdetail {
+			.table-top {
+				.small {
+					width: 10%;
+				}
+	
+				.normal {
+					width: 20%;
+				}
+	
+				.large {
+					width: 30%;
+				}
+			}
+	
+			.table-part {
+				.small {
+					width: 10%;
+				}
+	
+				.normal {
+					width: 20%;
+				}
+	
+				.large {
+					width: 30%;
+				}
+	
+				.state {}
+	
+				.grey {
+					color: #909399;
+	
+				}
+	
+				.yellow {
+					color: #ff9900;
+				}
+	
+				.green {
+					color: #19be6b;
+				}
+	
+				.detail {
+	
+					margin-top: 10rpx;
+					text-align: left;
+	
+					.title {
+						color: #606266;
+						font-size: 26rpx;
+	
+						.txt {
+							color: #999999;
+							margin-left: 10rpx;
+						}
+	
+						.red {
+							color: #fa3534;
+							margin-left: 10rpx;
+						}
+					}
+	
+	
+				}
+			}
+		}
+	</style>
+
+

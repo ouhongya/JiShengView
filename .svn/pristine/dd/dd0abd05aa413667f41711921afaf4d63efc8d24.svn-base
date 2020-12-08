@@ -1,0 +1,2173 @@
+<template>
+	<view class="setting">
+		<u-sticky :offset-top="offset">
+			<view>
+				<u-subsection :list="sublist" :current="curNow" @change="sectionChange" bg-color="#a5deda" button-color="#6ecac3"
+				 active-color="#fff" height="80" inactive-color="#fff"></u-subsection>
+			</view>
+		</u-sticky>
+		<view class="subpart" v-if="subIndex==0">
+			<!-- 账户 -->
+			<!-- 搜索 -->
+			<view class="subtop">
+				<view class="subsearch">
+					<u-search placeholder="请输入姓名" v-model="accountName" shape="square" :action-style="actionStyle" border-color='#4abdb4'
+					 bg-color="#ffffff" @search="searchAccount()" @custom="searchAccount()" @clear="clearAccount()"></u-search>
+				</view>
+				<view class="subnew">
+					<view class="new" @click="handleAccount('')">
+						新增
+					</view>
+				</view>
+			</view>
+
+			<!-- 表单 -->
+			<view class="empty" v-if="userlist.length<=0">
+				<image src="../../static/nodata.png" mode=""></image>
+				<view class="empty-tips">
+					暂无数据
+				</view>
+			</view>
+			<view class="table-part" v-else>
+				<u-table border-color="#6ecac3">
+					<u-tr class="u-tr">
+						<u-th class="u-th" width="20%">姓名</u-th>
+						<u-th class="u-th" width="20%">角色</u-th>
+						<u-th class="u-th" width="30%">电话</u-th>
+						<u-th class="u-th">操作</u-th>
+					</u-tr>
+				</u-table>
+				<scroll-view scroll-y style="height:70vh;width: 100%;" @scrolltolower="onreachBottom1">
+					<u-table border-color="#6ecac3">
+						<u-tr class="u-tr" v-for="(item, index) in userlist">
+							<u-td class="u-td" width="20%">{{item.NAME}}</u-td>
+							<u-td class="u-td" width="20%">{{item.ROLE_NAME}}</u-td>
+							<u-td class="u-td" width="30%">{{item.PHONE}}</u-td>
+							<u-td class="u-td">
+								<view class="action-part">
+									<view class="edit" @click="handleAccount(item)">编辑</view>
+									<view class="del" @click="delAccount(item,index)">删除</view>
+									<view class="code" @click="IMEIAccount(item)">清空</view>
+								</view>
+							</u-td>
+						</u-tr>
+					</u-table>
+					<!-- 分页加载 -->
+					<u-loadmore bg-color="none" :status="status" :icon-type="iconType" margin-top="30" margin-bottom="30" :load-text="loadText"
+					 @loadmore="loadmore" />
+				</scroll-view>
+			</view>
+
+
+			<!-- 新增或编辑账户弹框 -->
+			<u-popup v-model="showAccount" :mode="curMode" width="40%" height="80%" @close='close()'>
+				<view class="roleModel">
+					<view class="roleTop">
+						{{accountTopName}}
+					</view>
+					<view class="left" v-if="accountType" @click="downExcel()">
+						下载模板
+					</view>
+					<view>
+						<l-file ref="lFile" @up-success="onSuccess"></l-file>
+						<view class="right" v-if="accountType" @click="onUpload()">
+							批量导入
+						</view>
+					</view>
+					<!-- 加一 -->
+
+					<view v-for="(item,index) in accountList" class="part">
+						<view class="rolePart">
+							<view class="name">
+								登录名
+							</view>
+							<view class="content">
+								<view class="limit">
+									<u-input v-model="item.name" type="text" :border="true" height="70" placeholder="请输入登录名" />
+								</view>
+							</view>
+						</view>
+						<view class="rolePart">
+							<view class="name">
+								姓名
+							</view>
+							<view class="content">
+								<view class="limit">
+									<u-input v-model="item.username" type="text" :border="true" height="70" placeholder="请输入姓名" />
+								</view>
+							</view>
+						</view>
+						<view class="rolePart">
+							<view class="name">
+								手机
+							</view>
+							<view class="content">
+								<view class="limit">
+									<u-input v-model="item.phone" type="text" :border="true" height="70" placeholder="请输入手机号码" />
+								</view>
+							</view>
+						</view>
+						<view class="rolePart">
+							<view class="name">
+								角色
+							</view>
+							<view class="content">
+								<view class="limit">
+									<u-input v-model="item.accountfunction" type="select" :border="true" @click="openAccountList (index)" height="70"
+									 placeholder="点击选择角色" />
+								</view>
+							</view>
+						</view>
+					</view>
+					<view class="addcount" v-if="accountType">
+						<u-icon @click="addAccount()" name="man-add-fill" color="#6ecac3" size="44" class="personicon"></u-icon>
+						<u-icon @click="deleteAccount()" name="person-delete-fill" color="#fa3534" size="40" class="personicon"></u-icon>
+					</view>
+					<view class="roleAction">
+						<view class="cancel" @click="cancelAccount()">
+							取消
+						</view>
+						<view class="sure" @click="sureAccount(accountType)">
+							确定
+						</view>
+					</view>
+				</view>
+				<u-action-sheet :list="accountSheetList" v-model="showAccountList" @click="accountSheetCallback" border-radius="20"></u-action-sheet>
+			</u-popup>
+
+
+			<!-- 删除账户弹框 -->
+			<u-modal v-model="showAccountdel" @confirm="accountdel" content="您确认要删除吗？" :show-title="false" :show-cancel-button="true"
+			 :confirm-style="{'color':'#fa3534'}"></u-modal>
+
+		</view>
+		<view class="subpart" v-if="subIndex==1">
+			<!-- 角色 -->
+			<!-- 搜索 -->
+			<view class="subtop">
+				<view class="subsearch">
+					<u-search placeholder="请输入角色名称" v-model="roleName" shape="square" :action-style="actionStyle" border-color='#4abdb4'
+					 bg-color="#ffffff" @search="searchRole()" @custom="searchRole()" @clear="clearRole()"></u-search>
+				</view>
+				<view class="subnew">
+					<view class="new" @click="newORedit('')">
+						新增
+					</view>
+				</view>
+			</view>
+
+			<!-- 表单 -->
+			<view class="empty" v-if="List.length<=0">
+				<image src="../../static/nodata.png" mode=""></image>
+				<view class="empty-tips">
+					暂无数据
+				</view>
+			</view>
+			<view class="table-part" v-else>
+				<u-table border-color="#6ecac3">
+					<u-tr class="u-tr">
+						<u-th class="u-th" width="30%">角色</u-th>
+						<u-th class="u-th" width="30%">菜单权限</u-th>
+						<u-th class="u-th">操作</u-th>
+					</u-tr>
+				</u-table>
+				<scroll-view scroll-y style="height:70vh;" @scrolltolower="onreachBottom2">
+					<u-table>
+						<u-tr class="u-tr" v-for="(item,index) in List">
+							<u-td class="u-td" width="30%">{{item.ROLE_NAME}}</u-td>
+							<u-td class="u-td" width="30%">
+								<view class="" v-for="role in item.menus">{{role.menu_NAME}}</view>
+							</u-td>
+							<u-td class="u-td">
+								<view class="action-part">
+									<view class="see" @click="see(item)">查看</view>
+									<view class="edit" @click="newORedit(item)">编辑</view>
+									<view class="del" @click="del(index,item)">删除</view>
+								</view>
+							</u-td>
+						</u-tr>
+					</u-table>
+					<!-- 分页加载 -->
+					<u-loadmore bg-color="none" :status="statusj" :icon-type="iconType" margin-top="30" margin-bottom="30" :load-text="loadTextj"
+					 @loadmore="loadmorej" />
+				</scroll-view>
+
+			</view>
+
+			<!-- 新增或编辑角色弹框 -->
+			<u-popup v-model="showRole" :mode="curMode" width="40%" height="80%" @close='closej()'>
+				<view class="roleModel">
+					<view class="roleTop">
+						{{roleTopName}}
+					</view>
+					<view class="rolePart" v-if="roleType">
+						<view class="name">
+							角色名称
+						</view>
+						<view class="content">
+							<view class="limit">
+								<u-input v-model="roleform.name" type="text" :border="true" height="70" placeholder="请输入角色名称" />
+							</view>
+						</view>
+					</view>
+					<view class="rolePart">
+						<view class="name">
+							角色职能
+						</view>
+						<view class="content">
+							<view v-if="roleType" class="limit">
+								<u-input v-model="roleform.roleFunction" type="select" :border="true" @click="showSheetList = true" height="70" />
+								<u-action-sheet :list="roleSheetList" v-model="showSheetList" @click="roleSheetCallback" border-radius="20"></u-action-sheet>
+							</view>
+
+							<view class="limit" v-else>
+								<u-input v-model="roleform.roleFunction" type="text" :border="true" height="70" disabled class="gray" />
+							</view>
+						</view>
+					</view>
+					<view class="rolePart column">
+						<view class="name">
+							角色权限
+						</view>
+						<view class="content">
+							<u-checkbox-group width='50%'>
+								<u-checkbox v-model="item.checked" v-for="(item, index) in checkboxList" :key="index" :name="item.name"
+								 active-color="#4abdb4">
+									{{ item.name }}
+								</u-checkbox>
+							</u-checkbox-group>
+						</view>
+
+					</view>
+					<view class="roleAction">
+						<view class="cancel" @click="cancelRole()">
+							取消
+						</view>
+						<view class="sure" @click="sureRole(roleType)">
+							确定
+						</view>
+					</view>
+				</view>
+			</u-popup>
+
+			<!-- 查看角色弹框 -->
+			<u-popup v-model="seeRole" :mode="curMode" width="40%" height="80%">
+				<view class="roleModel">
+					<view class="roleTop">
+						详情
+					</view>
+					<view class="roletablePart">
+						<u-table border-color="#6ecac3" class="roleTable">
+							<u-tr>
+								<u-th width="30%">角色</u-th>
+								<u-th>人员列表</u-th>
+							</u-tr>
+							<u-tr>
+								<u-td width="30%">{{currentRole}}</u-td>
+								<u-td>
+									<view class="person" v-for="item in rolepeople">
+										{{item.USERNAME}}
+									</view>
+								</u-td>
+							</u-tr>
+						</u-table>
+					</view>
+				</view>
+			</u-popup>
+
+			<!-- 删除角色弹框 -->
+			<u-modal v-model="showRoledel" @confirm="roledel" content="您确认要删除吗？" :show-title="false" :show-cancel-button="true"
+			 :confirm-style="{'color':'#fa3534'}"></u-modal>
+		</view>
+		<view class="subpart" v-if="subIndex==2">
+			<!-- 字段配置 -->
+			<!-- 搜索 -->
+			<view class="subtop">
+				<view class="subsearch">
+					<u-search placeholder="请输入单位名称" v-model="fieldsName" shape="square" :action-style="actionStyle" border-color='#4abdb4'
+					 bg-color="#ffffff" @search="searchFields()" @custom="searchFields()" @clear="clearFields()"></u-search>
+				</view>
+				<view class="subnew">
+					<view class="new" @click="handleFields('')">
+						新增
+					</view>
+				</view>
+			</view>
+
+			<!-- 折叠面板 -->
+			<view class="empty" v-if="collapseList.length<=0">
+				<image src="../../static/nodata.png" mode=""></image>
+				<view class="empty-tips">
+					暂无数据
+				</view>
+			</view>
+			<view class="collapsePart" v-else>
+				<scroll-view scroll-y style="height:70vh;" @scrolltolower="onreachBottom3">
+					<view class="u-collapse-item" v-for="(item,index) in collapseList">
+						<view :hover-stay-time="200" class="u-collapse-head">
+							<block>
+								<view class="u-icon-wrap" @tap="headClick(index,item)">
+									<u-icon v-if="arrow" :class="{ 'u-arrow-down-icon-active': item.isShow }" class="u-arrow-down-icon" name="arrow-down"></u-icon>
+								</view>
+								<view class="u-collapse-title u-line-1" @tap="headClick(index,item)">
+									{{item.NAME}}
+								</view>
+								<view class="action">
+									<view class="right" @click="handleChild(item,1)">
+										新增子单位
+									</view>
+									<view class="right" @click="handleFields(item)">
+										编辑
+									</view>
+									<view class="right red" @click="delFields(item,index)">
+										删除
+									</view>
+								</view>
+							</block>
+						</view>
+						<view class="u-collapse-body" v-if="item.isShow&&secondunit.length>0">
+
+							<view class="u-collapse-content">
+								<view class="childPart" v-for="(item,index) in secondunit">
+									<view class="left">
+										{{item.NAME}}
+									</view>
+									<view class="action">
+										<view class="right" @click="handleChild(item,2)">
+											编辑
+										</view>
+										<view class="right red" @click="delChild(item,index)">
+											删除
+										</view>
+									</view>
+								</view>
+							</view>
+
+						</view>
+					</view>
+					<!-- 分页加载 -->
+					<u-loadmore bg-color="none" :status="statusz" :icon-type="iconType" margin-top="30" margin-bottom="30" :load-text="loadTextz"
+					 @loadmore="loadmorez" />
+				</scroll-view>
+
+			</view>
+			<!-- 新增或编辑父单位弹框 -->
+			<u-popup v-model="showFields" :mode="curMode" width="40%" height="80%" @close='closeFields'>
+				<view class="roleModel">
+					<view class="roleTop">
+						{{FieldsTopName}}
+					</view>
+
+					<view class="left" v-if="FieldsType" @click="downExcelz()">
+						下载模板
+					</view>
+					<view class="right" v-if="FieldsType" @click="onUploadz()">
+						<l-file ref="lFile" @up-success="onSuccessz"></l-file>
+						批量导入
+					</view>
+					<!-- 加一 -->
+
+					<view v-for="(item,index) in FieldsList" class="part">
+						<view class="rolePart">
+							<view class="name">
+								<text>*</text>单位名称
+							</view>
+							<view class="content">
+								<view class="limit">
+									<u-input v-model="item.company" type="text" :border="true" height="70" placeholder="请输入单位名称" />
+								</view>
+							</view>
+						</view>
+						<view class="rolePart">
+							<view class="name">
+								负责人
+							</view>
+							<view class="content">
+								<view class="limit">
+									<u-input v-model="item.name" type="text" :border="true" height="70" placeholder="请输入负责人姓名" />
+								</view>
+							</view>
+						</view>
+						<view class="rolePart">
+							<view class="name">
+								负责人电话
+							</view>
+							<view class="content">
+								<view class="limit">
+									<u-input v-model="item.phone" type="text" :border="true" height="70" placeholder="请输入手机号码" />
+								</view>
+							</view>
+						</view>
+						<view class="rolePart">
+							<view class="name">
+								单位地址
+							</view>
+							<view class="content">
+
+								<u-input v-model="item.address" type="textarea" :border="true" height="70" placeholder="请输入单位地址" />
+
+							</view>
+						</view>
+
+					</view>
+
+					<view class="addcount" v-if="FieldsType">
+
+						<u-icon @click="addFields()" name="man-add-fill" color="#6ecac3" size="44" class="personicon"></u-icon>
+						<u-icon @click="deleteFields()" name="person-delete-fill" color="#fa3534" size="40" class="personicon"></u-icon>
+					</view>
+
+
+					<view class="roleAction">
+						<view class="cancel" @click="cancelFields()">
+							取消
+						</view>
+						<view class="sure" @click="sureFields(FieldsType)">
+							确定
+						</view>
+					</view>
+				</view>
+			</u-popup>
+			<!-- 删除父单位 -->
+			<u-modal v-model="showFieldsdel" @confirm="Fieldsdel" content="您确认要删除吗？" :show-title="false" :show-cancel-button="true"
+			 :confirm-style="{'color':'#fa3534'}"></u-modal>
+			<!-- 新增或编辑子单位弹框 -->
+			<u-popup v-model="showChild" :mode="curMode" width="40%" height="80%" @close='closez1()'>
+				<view class="roleModel">
+					<view class="roleTop">
+						{{ChildTopName}}
+					</view>
+					<view v-for="(item,index) in ChildList" class="part">
+						<view class="rolePart">
+
+							<view class="name">
+								所属单位
+							</view>
+							<view class="content">
+								<view class="title">
+									{{item.parentcompany}}
+								</view>
+							</view>
+						</view>
+						<view class="rolePart">
+							<view class="name">
+								<text>*</text>单位名称
+							</view>
+							<view class="content">
+								<view class="limit">
+									<u-input v-model="item.company" type="text" :border="true" height="70" placeholder="请输入变电站名称" />
+								</view>
+							</view>
+						</view>
+						<view class="rolePart">
+							<view class="name">
+								负责人
+							</view>
+							<view class="content">
+								<view class="limit">
+									<u-input v-model="item.name" type="text" :border="true" height="70" placeholder="请输入负责人姓名" />
+								</view>
+							</view>
+						</view>
+						<view class="rolePart">
+							<view class="name">
+								负责人电话
+							</view>
+							<view class="content">
+								<view class="limit">
+									<u-input v-model="item.phone" type="text" :border="true" height="70" placeholder="请输入手机号码" />
+								</view>
+							</view>
+						</view>
+						<view class="rolePart">
+							<view class="name">
+								单位地址
+							</view>
+							<view class="content">
+
+								<u-input v-model="item.address" type="textarea" :border="true" height="70" placeholder="请输入单位地址" />
+
+							</view>
+						</view>
+
+					</view>
+					<view class="roleAction">
+						<view class="cancel" @click="cancelChild()">
+							取消
+						</view>
+						<view class="sure" @click="sureChild(ChildType)">
+							确定
+						</view>
+					</view>
+				</view>
+			</u-popup>
+
+			<!-- 删除子单位 -->
+			<u-modal v-model="showChildel" @confirm="Childel" content="您确认要删除吗？" :show-title="false" :show-cancel-button="true"
+			 :confirm-style="{'color':'#fa3534'}"></u-modal>
+		</view>
+		<!-- <view class="subpart" v-if="subIndex==3">
+			节点配置
+		</view> -->
+		<!-- 消息提示 -->
+		<u-toast ref="uToast" />
+	</view>
+</template>
+
+<script>
+	import helper from '@/common/helper.js'
+	import lFile from '@/components/l-file/l-file.vue'
+	export default {
+
+		props: {
+			offset: {
+				type: Number,
+				default: 0
+			},
+			curMode: {
+				type: String,
+				default: 'bottom'
+			}
+		},
+		data() {
+			return {
+				// 头部导航
+				curNow: 0, //当前选中
+				subIndex: 0, //当前选中内容
+				sublist: [{
+						name: '账户'
+					},
+					{
+						name: '角色'
+					},
+					{
+						name: '字段配置'
+					},
+					// {
+					// 	name: '节点配置'
+					// }
+				],
+				userlist: [],
+				secondunit: [],
+				deluser: {},
+				bianROLE_ID: "",
+				bianunitid: "",
+				deluserindex: "",
+				deleterole: {},
+				deleteroleindex: "",
+				deleteunit: {},
+				deleteunitindex: '',
+				actionStyle: {
+					backgroundColor: '#4abdb4',
+					color: '#fff',
+					margin: '0',
+					width: '100rpx',
+					height: '68rpx',
+					lineHeight: '68rpx',
+					borderRadius: '0 10rpx 10rpx 0'
+				},
+				// 账户部分start
+				accountName: '',
+				showAccount: false,
+				rolepeople: [],
+				currentRole: '',
+				accountType: false,
+				accountList: [],
+				accountfunction: "",
+				bianuserid: "",
+				roleid: '',
+				showAccountdel: false,
+				showAccountList: false,
+				openindex: "",
+				accountSheetList: [],
+				accountTopName: '新增账户',
+				// 角色部分start
+				//搜索
+				roleName: '',
+				//操作数据
+				showRole: false,
+				roleTopName: '新增角色',
+				roleType: true,
+				roleform: {
+					name: '',
+					roleFunction: '',
+					rolecheckList: []
+				},
+				seeRole: false,
+				showRoledel: false,
+				showSheetList: false,
+				roleSheetList: [],
+				checkboxList: [],
+				//表单数据
+				List: [],
+				// 角色部分end
+
+				// 字段配置部分start
+				fieldsName: '',
+				isShow: false,
+				elId: this.$u.guid(),
+				height: 0, // body内容的高度
+				arrow: true, //是否显示箭头
+				collapseList: [],
+				showFields: false,
+				FieldsTopName: '新增单位',
+				FieldsType: true,
+				showFieldsdel: false,
+				FieldsList: [{
+					company: '',
+					name: '',
+					phone: '',
+					address: ''
+				}],
+				showChild: false,
+				ChildTopName: '新增子单位',
+				ChildType: true,
+				showChildel: false,
+				ChildList: [{
+					company: '',
+					name: '',
+					phone: '',
+					address: '',
+					parentcompany: '',
+					parentcompanyid: ''
+				}],
+				// 字段配置部分end
+				parentcompany: "",
+				parentcompanyid: "",
+				//分页
+				pages: 1,
+				pageNum: 1,
+				pageSize: 20,
+				status: 'loading',
+				iconType: 'flower',
+				loadText: {
+					loadmore: '点击或上拉加载更多',
+					loading: '正在加载...',
+					nomore: '我也是有底线的'
+				},
+
+				//分页
+				pagesj: 1,
+				pageNumj: 1,
+				pageSizej: 10,
+				statusj: 'loading',
+				iconTypej: 'flower',
+				loadTextj: {
+					loadmore: '点击或上拉加载更多',
+					loading: '正在加载...',
+					nomore: '我也是有底线的'
+				},
+
+
+
+				//分页
+				pagesz: 1,
+				pageNumz: 1,
+				pageSizez: 10,
+				statusz: 'loading',
+				iconTypez: 'flower',
+				loadTextz: {
+					loadmore: '点击或上拉加载更多',
+					loading: '正在加载...',
+					nomore: '我也是有底线的'
+				},
+			}
+		},
+		created() {
+			this.init();
+			this.goAddU();
+			this.initj();
+			this.initz();
+		},
+		methods: {
+			onUpload() {
+				this.$refs.lFile.upload({
+					// #ifdef APP-PLUS
+					currentWebview: this.$mp.page.$getAppWebview(),
+					// #endif
+
+					url: helper.websiteUrl + 'v1/readExcel',
+
+					name: 'excel',
+
+				});
+			},
+			onSuccess(res) {
+
+				this.pageNum = 1;
+				this.accountName = "";
+				this.init();
+				this.accountList = [{
+					name: '',
+					phone: '',
+					roleid: this.roleid,
+					accountfunction: this.accountfunction
+				}];
+				this.showAccount = false;
+			},
+
+			onUploadz() {
+				this.$refs.lFile.upload({
+					// #ifdef APP-PLUS
+					currentWebview: this.$mp.page.$getAppWebview(),
+					// #endif
+					//非真实地址，记得更换
+					url: helper.websiteUrl + 'v1/readunitExcel',
+					//默认file,上传文件的key
+					name: 'excel',
+					// header: {'Content-Type':'类型','Authorization':'token'},
+					//...其他参数
+				});
+			},
+			onSuccessz(res) {
+
+				this.pageNumz = 1;
+				this.fieldsName = "";
+				this.initz();
+				this.showFields = false;
+			},
+
+			//导航切换
+			sectionChange(index) {
+				this.curNow = index;
+				this.subIndex = index;
+			},
+			//初始化请求数据
+			init() {
+				this.status = 'loadmore';
+				if (this.pageNum > 1) {
+					let uid = "";
+					uni.getStorage({
+						key: 'USER_ID',
+						success: function(res) {
+							uid = res.data;
+						}
+					});
+					helper.request(helper.websiteUrl + "v1/listUsers", {
+						'uid': uid,
+						'showCount': this.pageSize,
+						'currentPage': this.pageNum,
+						"USERNAME": this.accountName
+					}, 'GET', false, (data) => {
+						this.userlist = this.userlist.concat(data.pageDataList);
+						this.pages = data.totalPage;
+						this.pageNum = data.currentPage;
+						uni.stopPullDownRefresh();
+						this.pageNum++;
+						if (this.pageNum > this.pages) {
+							this.status = 'nomore';
+						}
+					})
+				} else {
+					let uid = "";
+					uni.getStorage({
+						key: 'USER_ID',
+						success: function(res) {
+							uid = res.data;
+						}
+					});
+					helper.request(helper.websiteUrl + "v1/listUsers", {
+						'uid': uid,
+						'showCount': this.pageSize,
+						'currentPage': this.pageNum,
+						"USERNAME": this.accountName
+					}, 'GET', false, (data) => {
+						this.userlist = data.pageDataList;
+						this.pages = data.totalPage;
+						this.pageNum = data.currentPage;
+						uni.stopPullDownRefresh();
+						this.pageNum++;
+						if (this.pageNum > this.pages) {
+							this.status = 'nomore';
+						}
+
+
+					})
+
+				}
+
+			},
+			//初始化请求数据
+			initj() {
+				this.statusj = 'loadmore';
+				if (this.pageNumj > 1) {
+					let uid = "";
+					uni.getStorage({
+						key: 'USER_ID',
+						success: function(res) {
+							uid = res.data;
+						}
+					});
+					helper.request(helper.websiteUrl + "v1/roleandrolemenu", {
+						'uid': uid,
+						'showCount': this.pageSizej,
+						'currentPage': this.pageNumj,
+						"ROLE_NAME": this.roleName
+					}, 'GET', false, (data) => {
+						this.List = this.List.concat(data.pageDataList);
+						this.pagesj = data.totalPage;
+						this.pageNumj = data.currentPage;
+						uni.stopPullDownRefresh();
+						this.pageNumj++;
+						if (this.pageNumj > this.pagesj) {
+							this.statusj = 'nomore';
+						}
+					})
+				} else {
+					let uid = "";
+					uni.getStorage({
+						key: 'USER_ID',
+						success: function(res) {
+							uid = res.data;
+						}
+					});
+					helper.request(helper.websiteUrl + "v1/roleandrolemenu", {
+						'uid': uid,
+						'showCount': this.pageSizej,
+						'currentPage': this.pageNumj,
+						"ROLE_NAME": this.roleName
+					}, 'GET', false, (data) => {
+
+						this.List = data.pageDataList;
+						this.pagesj = data.totalPage;
+						this.pageNumj = data.currentPage;
+						uni.stopPullDownRefresh();
+						this.pageNumj++;
+						if (this.pageNumj > this.pagesj) {
+							this.statusj = 'nomore';
+						}
+					})
+				}
+			},
+			//初始化请求数据
+			initz() {
+				this.statusz = 'loadmore';
+				if (this.pageNumz > 1) {
+					let uid = "";
+					uni.getStorage({
+						key: 'USER_ID',
+						success: function(res) {
+							uid = res.data;
+						}
+					});
+					helper.request(helper.websiteUrl + "v1/unitlist", {
+						'uid': uid,
+						'showCount': this.pageSizez,
+						'currentPage': this.pageNumz,
+						"NAME": this.fieldsName
+					}, 'GET', false, (data) => {
+						this.collapseList = this.collapseList.concat(data.pageDataList);
+
+						this.pagesz = data.totalPage;
+						this.pageNumz = data.currentPage;
+						uni.stopPullDownRefresh();
+						this.pageNumz++;
+						if (this.pageNumz > this.pagesz) {
+							this.statusz = 'nomore';
+						}
+
+					})
+				} else {
+					let uid = "";
+					uni.getStorage({
+						key: 'USER_ID',
+						success: function(res) {
+							uid = res.data;
+						}
+					});
+					helper.request(helper.websiteUrl + "v1/unitlist", {
+						'uid': uid,
+						'showCount': this.pageSizez,
+						'currentPage': this.pageNumz,
+						"NAME": this.fieldsName
+					}, 'GET', false, (data) => {
+						this.collapseList = data.pageDataList;
+
+						this.pagesz = data.totalPage;
+						this.pageNumz = data.currentPage;
+						uni.stopPullDownRefresh();
+						this.pageNumz++;
+						if (this.pageNumz > this.pagesz) {
+							this.statusz = 'nomore';
+						}
+					})
+				}
+			},
+
+
+			close() {
+
+				this.accountList = [{
+					name: '',
+					phone: '',
+					roleid: this.roleid,
+					accountfunction: this.accountfunction
+				}];
+				this.showAccount = false;
+			},
+
+			closej() {
+				this.roleform = {
+					name: '',
+					roleFunction: this.roleSheetList[0].text,
+					rolecheckList: []
+				}
+				this.rolepeople = [];
+
+			},
+
+
+			closeFields() {
+				this.showFields = false;
+			},
+
+			closez1() {
+				this.showChild = false;
+			},
+			goAddU() {
+				let uid = "";
+				uni.getStorage({
+					key: 'USER_ID',
+					success: function(res) {
+						uid = res.data;
+					}
+				});
+				helper.request(helper.websiteUrl + "v1/goAddU", {
+					'uid': uid
+				}, 'GET', false, (data) => {
+
+					this.accountSheetList = data;
+					this.accountList = [{
+						name: '',
+						phone: '',
+						roleid: data[0].role_ID,
+						accountfunction: data[0].role_NAME
+					}];
+					this.accountfunction = data[0].role_NAME;
+					this.roleid = data[0].role_ID;
+				})
+			},
+			// 上拉加载
+			onreachBottom(e) {
+				if (this.pageNum > this.page) {
+					this.status = "nomore"
+					return
+				}
+				this.init()
+
+				if (this.pageNumj > this.pagej) {
+					this.statusj = "nomore"
+					return
+				}
+				this.initj()
+
+				if (this.pageNumz > this.pagez) {
+					this.statusz = "nomore"
+					return
+				}
+				this.initz()
+			},
+			//点击加载
+			loadmore() {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				this.init();
+			},
+			onreachBottom1() {
+				if (this.pageNum > this.pages) {
+					this.status = 'nomore';
+					return;
+				}
+				this.init();
+			},
+
+			//点击加载
+			loadmorej() {
+				if (this.pageNumj > this.pagesj) {
+					this.statusj = 'nomore';
+					return;
+				}
+				this.initj();
+			},
+			onreachBottom2() {
+				if (this.pageNumj > this.pagesj) {
+					this.statusj = 'nomore';
+					return;
+				}
+				this.initj();
+			},
+
+			//点击加载
+			loadmorez() {
+				if (this.pageNumz > this.pagesz) {
+					this.statusz = 'nomore';
+					return;
+				}
+				this.initz();
+			},
+			onreachBottom3() {
+				if (this.pageNumz > this.pagesz) {
+					this.statusz = 'nomore';
+					return;
+				}
+				this.initz();
+			},
+			//账户部分start
+			searchAccount() {
+				this.pageNum = 1;
+				this.userlist = [];
+				this.init();
+			},
+			//点击清除按钮
+			clearAccount() {
+				this.pageNum = 1;
+				this.accountName = "";
+				this.init();
+
+			},
+			//批量导入
+			addAccount() {
+				this.accountList = this.accountList.concat([{
+					name: '',
+					phone: '',
+					roleid: this.roleid,
+					accountfunction: this.accountfunction
+				}])
+			},
+			deleteAccount() {
+				this.accountList.splice(this.accountList.length - 1, 1)
+			},
+			// 账户选中
+			accountSheetCallback(index) {
+				this.accountList[this.openindex].accountfunction = this.accountSheetList[index].text;
+				this.accountList[this.openindex].roleid = this.accountSheetList[index].value;
+			},
+			openAccountList(index) {
+				this.openindex = index;
+				this.showAccountList = true;
+			},
+
+			//新增或编辑账户
+			handleAccount(item) {
+				if (item == '') {
+					// 新增
+					this.showAccount = true;
+					this.accountTopName = '新增账户';
+					this.accountType = true;
+				} else {
+					// 编辑
+					this.showAccount = true;
+					this.accountTopName = '编辑账户';
+					this.accountType = false;
+					let uid = "";
+					uni.getStorage({
+						key: 'USER_ID',
+						success: function(res) {
+							uid = res.data;
+						}
+					});
+					this.bianuserid = item.USER_ID;
+					helper.request(helper.websiteUrl + "v1/goEditU", {
+						'uid': uid,
+						'USER_ID': item.USER_ID
+					}, 'POST', false, (data) => {
+
+						this.accountList = [{
+							name: data.USERNAME,
+							username: data.NAME,
+							phone: data.PHONE,
+							roleid: data.ROLE_ID,
+							accountfunction: data.ROLE_NAME
+						}];
+					})
+				}
+			},
+
+			//确认新增或编辑账户
+			sureAccount(type) {
+				let namelen = 0;
+				let usernamelen = 0;
+				let phonelen = 0;
+				this.accountList.map(item => {
+					if (!item.name) {
+						namelen++
+					}
+					if (!item.username) {
+						usernamelen++
+					}
+					if (!item.phone) {
+						phonelen++
+					}
+				})
+				if (namelen > 0) {
+					this.$refs.uToast.show({
+						title: '登录名称不能为空',
+						type: 'warning'
+					})
+					return;
+
+				}
+				if (usernamelen > 0) {
+					this.$refs.uToast.show({
+						title: '姓名不能为空',
+						type: 'warning'
+					})
+					return
+				}
+				if (phonelen > 0) {
+					this.$refs.uToast.show({
+						title: '手机号不能为空',
+						type: 'warning'
+					})
+					return
+				}
+				if (type == true) {
+					//新增
+					let accountList = JSON.stringify(this.accountList)
+					let uid = "";
+					uni.getStorage({
+						key: 'USER_ID',
+						success: function(res) {
+							uid = res.data;
+						}
+					});
+					helper.request(helper.websiteUrl + "v1/saveU", {
+						'uid': uid,
+						'accountList': accountList
+					}, 'POST', false, (data) => {
+						if (data.names.length > 0) {
+							helper.showToast(data.names + "用户名重复！");
+							this.pageNum = 1;
+							this.accountName = "";
+							this.init();
+							this.accountList = [{
+								name: '',
+								phone: '',
+								roleid: this.roleid,
+								accountfunction: this.accountfunction
+							}];
+							this.showAccount = false;
+						} else {
+							helper.showToast("新增成功！");
+							this.pageNum = 1;
+							this.accountName = "";
+							this.init();
+							this.accountList = [{
+								name: '',
+								phone: '',
+								roleid: this.roleid,
+								accountfunction: this.accountfunction
+							}];
+							this.showAccount = false;
+						}
+
+					})
+				} else {
+
+					let uid = "";
+					uni.getStorage({
+						key: 'USER_ID',
+						success: function(res) {
+							uid = res.data;
+						}
+					});
+
+					let accountList = JSON.stringify(this.accountList)
+					helper.request(helper.websiteUrl + "v1/editU", {
+						'uid': uid,
+						'USER_ID': this.bianuserid,
+						'accountList': accountList
+					}, 'POST', false, (data) => {
+
+						if (uni.getStorageSync("USER_ID") == data.USER_ID) {
+
+							uni.setStorageSync('PHONE', data.PHONE);
+							uni.setStorageSync('USERNAME', data.USERNAME);
+							uni.setStorageSync('NAME', data.NAME);
+							uni.setStorageSync('ROLE_ID', data.ROLE_ID);
+							this.$emit('funInfo', false)
+						}
+						this.pageNum = 1;
+						this.accountName = "";
+						this.init();
+						this.accountList = [{
+							name: '',
+							phone: '',
+							roleid: this.roleid,
+							accountfunction: this.accountfunction
+						}];
+						this.showAccount = false;
+
+					})
+				}
+
+			},
+			downExcel() {
+				helper.downloadTask(helper.websiteUrl + "v1/downExcel")
+			},
+
+			downExcelz() {
+
+				helper.downloadTask(helper.websiteUrl + "v1/downunitExcel")
+			},
+
+			//取消新增或编辑账户
+			cancelAccount() {
+				this.accountList = [{
+					name: '',
+					phone: '',
+					roleid: this.roleid,
+					accountfunction: this.accountfunction
+				}];
+				this.showAccount = false;
+
+			},
+			//删除弹框
+			delAccount(USER, index) {
+				this.deluser = USER;
+				this.deluserindex = index;
+				this.showAccountdel = true;
+			},
+			//删除弹框
+			IMEIAccount(USER) {
+				let uid = "";
+				uni.getStorage({
+					key: 'USER_ID',
+					success: function(res) {
+						uid = res.data;
+					}
+				});
+				helper.request(helper.websiteUrl + "v1/deleteIMEI", {
+					'uid': uid,
+					'USER_ID': USER.USER_ID
+				}, 'GET', false, (data) => {
+					helper.showToast(data)
+
+
+				})
+
+			},
+			//确认删除
+			accountdel() {
+				let uid = "";
+				uni.getStorage({
+					key: 'USER_ID',
+					success: function(res) {
+						uid = res.data;
+					}
+				});
+				helper.request(helper.websiteUrl + "v1/deleteU", {
+					'uid': uid,
+					'USER_ID': this.deluser.USER_ID
+				}, 'GET', false, (data) => {
+
+					this.userlist.splice(this.deluserindex, 1);
+					this.deluser = {};
+					this.deluserindex = "";
+
+				})
+				this.showAccountdel = false;
+
+			},
+			//账户部分end			
+
+
+			// 角色部分start
+			//搜索
+			searchRole() {
+				this.pageNumj = 1;
+				this.List = [];
+				this.initj();
+			},
+			clearRole() {
+				this.pageNumj = 1;
+				this.roleName = "";
+				this.initj();
+
+			},
+			// 角色选中
+			roleSheetCallback(index) {
+
+				this.roleform.roleFunction = this.roleSheetList[index].text;
+			},
+			//新增或编辑角色
+			newORedit(item) {
+				if (item == '') {
+					// 新增
+					this.checkboxList = [];
+					let uid = "";
+					uni.getStorage({
+						key: 'USER_ID',
+						success: function(res) {
+							uid = res.data;
+						}
+					});
+					helper.request(helper.websiteUrl + "v1/goaddroledata", {
+						'uid': uid
+					}, 'GET', false, (data) => {
+
+						this.checkboxList = data.menus;
+						this.roleform.roleFunction = data.functions[0].text;
+						this.roleSheetList = data.functions;
+
+					})
+					this.showRole = true;
+					this.roleTopName = '新增角色';
+					this.roleType = true;
+				} else {
+					this.roleform.roleFunction = '';
+					this.checkboxList = [];
+					this.bianROLE_ID = item.ROLE_ID;
+					let uid = "";
+					uni.getStorage({
+						key: 'USER_ID',
+						success: function(res) {
+							uid = res.data;
+						}
+					});
+					helper.request(helper.websiteUrl + "v1/editroledata", {
+						'uid': uid,
+						'ROLE_ID': item.ROLE_ID
+					}, 'GET', false, (data) => {
+						this.checkboxList = data.menus;
+						this.roleSheetList = data.functions;
+						this.roleform.roleFunction = data.ROLE_NAME;
+					})
+					// 编辑
+					this.showRole = true;
+					this.roleTopName = '编辑角色';
+					this.roleType = false;
+				}
+			},
+
+			//确认新增或编辑角色
+			sureRole(type) {
+				let length = 0;
+				if (type == true) {
+					if (!this.roleform.name) {
+						this.$refs.uToast.show({
+							title: '角色名称不能为空',
+							type: 'warning'
+						})
+						return;
+					}
+
+					this.checkboxList.map(item => {
+						if (item.checked) {
+							length++;
+
+						}
+					})
+					if (length == 0) {
+						this.$refs.uToast.show({
+							title: '请至少勾选一项角色权限',
+							type: 'warning'
+						})
+						return;
+					}
+					this.roleform.rolecheckList = this.checkboxList
+					//新增
+					let uid = "";
+					uni.getStorage({
+						key: 'USER_ID',
+						success: function(res) {
+							uid = res.data;
+						}
+					});
+					helper.request(helper.websiteUrl + "v1/saverole", {
+						'uid': uid,
+						'roleform': this.roleform
+					}, 'GET', false, (data) => {
+						helper.showToast("新增成功！");
+						this.showRole = false;
+						this.roleform = {
+							name: '',
+							roleFunction: this.roleSheetList[0].text,
+							rolecheckList: []
+						}
+						this.pageNumj = 1;
+						this.roleName = "";
+						this.initj();
+
+					})
+				} else {
+					//编辑
+					this.checkboxList.map(item => {
+						if (item.checked) {
+							length++;
+
+						}
+					})
+					if (length == 0) {
+						this.$refs.uToast.show({
+							title: '请至少勾选一项角色权限',
+							type: 'warning'
+						})
+						return;
+					}
+					this.roleform.rolecheckList = this.checkboxList
+					//新增
+					let uid = "";
+					uni.getStorage({
+						key: 'USER_ID',
+						success: function(res) {
+							uid = res.data;
+						}
+					});
+					helper.request(helper.websiteUrl + "v1/editrole", {
+						'uid': uid,
+						'ROLE_ID': this.bianROLE_ID,
+						'roleform': this.roleform
+					}, 'GET', false, (data) => {
+						helper.showToast(data);
+						this.showRole = false;
+						this.roleform = {
+							name: '',
+							roleFunction: this.roleSheetList[0].text,
+							rolecheckList: []
+						}
+						this.pageNumj = 1;
+						this.roleName = "";
+						this.initj();
+
+					})
+				}
+			},
+			//取消新增或编辑角色
+			cancelRole() {
+				this.roleform = {
+					name: '',
+					roleFunction: this.roleSheetList[0].text,
+					rolecheckList: []
+				}
+				this.showRole = false;
+			},
+			//查看角色
+			see(item) {
+				let uid = "";
+				uni.getStorage({
+					key: 'USER_ID',
+					success: function(res) {
+						uid = res.data;
+					}
+				});
+				helper.request(helper.websiteUrl + "v1/seeroleuser", {
+					'uid': uid,
+					'ROLE_ID': item.ROLE_ID
+				}, 'GET', false, (data) => {
+					this.rolepeople = data
+				})
+				this.currentRole = item.ROLE_NAME;
+				this.seeRole = true;
+			},
+			//删除弹框
+			del(index, item) {
+				this.deleterole = item;
+				this.deleteroleindex = index;
+				this.showRoledel = true;
+			},
+			//确认删除
+			roledel() {
+				let uid = "";
+				uni.getStorage({
+					key: 'USER_ID',
+					success: function(res) {
+						uid = res.data;
+					}
+				});
+				helper.request(helper.websiteUrl + "v1/deleterole", {
+					'uid': uid,
+					'ROLE_ID': this.deleterole.ROLE_ID
+				}, 'GET', false, (data) => {
+					helper.showToast(data)
+					this.List.splice(this.deleteroleindex, 1);
+					this.deleterole = {};
+					this.deleteroleindex = "";
+					this.showRoledel = false;
+				})
+
+			},
+			// 角色部分end
+
+			// 字段配置部分start
+			//搜索
+			searchFields() {
+				this.pageNumz = 1;
+				this.collapseList = [];
+				this.initz();
+			},
+			clearFields() {
+				this.pageNumz = 1;
+				this.fieldsName = "";
+				this.initz();
+			},
+			// 点击collapsehead头部
+			headClick(index, item) {
+				let uid = "";
+				uni.getStorage({
+					key: 'USER_ID',
+					success: function(res) {
+						uid = res.data;
+					}
+				});
+				helper.request(helper.websiteUrl + "v1/unitsecondlist", {
+					'uid': uid,
+					'PARENT_ID': item.UNIT_ID
+				}, 'GET', false, (data) => {
+					this.parentcompany = item.NAME;
+					this.parentcompanyid = item.UNIT_ID;
+					this.secondunit = data
+					let clickIndex = index
+
+					this.collapseList[index].isShow = !this.collapseList[index].isShow;
+					this.collapseList.map((e, index) => {
+						if (index != clickIndex) {
+							e.isShow = false;
+						}
+					})
+				})
+			},
+			//批量导入
+			addFields() {
+				this.FieldsList = this.FieldsList.concat([{
+					company: '',
+					name: '',
+					phone: '',
+					address: ''
+				}])
+			},
+			//批量导入
+			deleteFields() {
+				this.FieldsList.splice(this.FieldsList.length - 1, 1)
+			},
+			//新增或编辑父单位弹框
+			handleFields(item) {
+				if (item == '') {
+					// 新增
+					this.showFields = true;
+					this.FieldsTopName = '新增单位';
+					this.FieldsType = true;
+					this.FieldsList = [{
+						company: '',
+						name: '',
+						phone: '',
+						address: ''
+					}];
+				} else {
+					// 编辑
+					this.showFields = true;
+					this.FieldsTopName = '编辑单位';
+					this.FieldsType = false;
+					this.FieldsList = [{
+						company: item.NAME,
+						name: item.GROUPUSER,
+						phone: item.PHONE,
+						address: item.ADDRESS
+					}];
+					this.bianunitid = item.UNIT_ID;
+				}
+			},
+			//确认新增或编辑父单位
+			sureFields(type) {
+				let companylen = 0
+				this.FieldsList.forEach(item => {
+					if (item.company == '') {
+						companylen++
+					}
+				})
+				if (companylen > 0) {
+					this.$refs.uToast.show({
+						title: '单位名称不能为空',
+						type: 'warning'
+					})
+					return;
+				}
+				if (type == true) {
+					//新增
+
+					let fieldlist = JSON.stringify(this.FieldsList)
+					let uid = "";
+					uni.getStorage({
+						key: 'USER_ID',
+						success: function(res) {
+							uid = res.data;
+						}
+					});
+					helper.request(helper.websiteUrl + "v1/saveunit", {
+						'uid': uid,
+						'PARENT_ID': "",
+						'FieldsList': fieldlist
+					}, 'GET', false, (data) => {
+						helper.showToast("新增成功！");
+						this.showFields = false;
+						this.FieldsList = [{
+							company: '',
+							name: '',
+							phone: '',
+							address: ''
+						}];
+						this.pageNumz = 1;
+						this.fieldsName = "";
+						this.initz();
+					})
+
+				} else {
+					//编辑
+					let fieldlist = JSON.stringify(this.FieldsList)
+					let uid = "";
+					uni.getStorage({
+						key: 'USER_ID',
+						success: function(res) {
+							uid = res.data;
+						}
+					});
+					helper.request(helper.websiteUrl + "v1/editunit", {
+						'uid': uid,
+						'UNIT_ID': this.bianunitid,
+						'PARENT_ID': "",
+						'FieldsList': fieldlist
+					}, 'GET', false, (data) => {
+						helper.showToast(data);
+						this.showFields = false;
+						this.FieldsList = [{
+							company: '',
+							name: '',
+							phone: '',
+							address: ''
+						}];
+						this.pageNumz = 1;
+						this.fieldsName = "";
+						this.initz();
+					})
+				}
+
+			},
+			//取消新增或编辑父单位
+			cancelFields() {
+
+				this.showFields = false;
+			},
+			//删除弹框
+			delFields(item, index) {
+				this.deleteunit = item;
+				this.deleteunitindex = index;
+				this.showFieldsdel = true;
+			},
+			//确认删除
+			Fieldsdel() {
+
+				let uid = "";
+				uni.getStorage({
+					key: 'USER_ID',
+					success: function(res) {
+						uid = res.data;
+					}
+				});
+				helper.request(helper.websiteUrl + "v1/deleteunit", {
+					'uid': uid,
+					'UNIT_ID': this.deleteunit.UNIT_ID
+				}, 'GET', false, (data) => {
+					helper.showToast(data)
+					this.collapseList.splice(this.deleteunitindex, 1)
+					this.showChildel = false;
+				})
+			},
+
+			//新增或编辑子单位弹框
+
+			handleChild(item, index) {
+				if (index == 1) {
+					this.ChildList[0].parentcompany = item.NAME;
+					this.ChildList[0].parentcompanyid = item.UNIT_ID;
+					// 新增
+					this.showChild = true;
+					this.ChildTopName = '新增子单位';
+					this.ChildType = true;
+				} else if (index == 2) {
+					this.ChildList = [{
+						company: item.NAME,
+						name: item.GROUPUSER,
+						phone: item.PHONE,
+						address: item.ADDRESS,
+						parentcompany: this.parentcompany,
+						parentcompanyid: ''
+					}];
+					this.bianunitid = item.UNIT_ID;
+					this.showChild = true;
+					this.ChildTopName = '编辑子单位';
+					this.ChildType = false;
+				}
+			},
+
+			//确认新增或编辑父单位
+			sureChild(type) {
+				if (!this.ChildList[0].company) {
+					this.$refs.uToast.show({
+						title: '子单位名称不能为空',
+						type: 'warning'
+					})
+					return;
+				}
+				// if(!this.ChildList[0].name){
+				// 	this.$refs.uToast.show({
+				// 		title: '负责人名称不能为空',
+				// 		type: 'warning'
+				// 	})
+				// 	return;
+				// }
+				// if(!this.ChildList[0].phone){
+				// 	this.$refs.uToast.show({
+				// 		title: '负责人电话不能为空',
+				// 		type: 'warning'
+				// 	})
+				// 	return;
+				// }
+				// if(!this.ChildList[0].address){
+				// 	this.$refs.uToast.show({
+				// 		title: '子单位地址不能为空',
+				// 		type: 'warning'
+				// 	})
+				// 	return;
+				// }
+				if (type == true) {
+					//新增		
+					let childlist = JSON.stringify(this.ChildList)
+					let uid = "";
+					uni.getStorage({
+						key: 'USER_ID',
+						success: function(res) {
+							uid = res.data;
+						}
+					});
+					helper.request(helper.websiteUrl + "v1/saveunitsecond", {
+						'uid': uid,
+						'FieldsList': childlist
+					}, 'GET', false, (data) => {
+						helper.showToast("新增成功！")
+						this.secondunit = data
+					})
+					this.showChild = false;
+				} else {
+					//编辑	
+
+
+
+					let fieldlist = JSON.stringify(this.ChildList)
+					let uid = "";
+					uni.getStorage({
+						key: 'USER_ID',
+						success: function(res) {
+							uid = res.data;
+						}
+					});
+					helper.request(helper.websiteUrl + "v1/editunitsecond", {
+						'uid': uid,
+						'UNIT_ID': this.bianunitid,
+						'PARENT_ID': this.parentcompanyid,
+						'FieldsList': fieldlist
+					}, 'GET', false, (data) => {
+						this.secondunit = data;
+					})
+					this.showChild = false;
+				}
+
+			},
+			//取消新增或编辑父单位
+			cancelChild() {
+				this.showChild = false;
+			},
+			//删除弹框
+			delChild(item, index) {
+				this.deleteunit = item;
+				this.deleteunitindex = index;
+				this.showChildel = true;
+			},
+			//确认删除
+			Childel() {
+
+				let uid = "";
+				uni.getStorage({
+					key: 'USER_ID',
+					success: function(res) {
+						uid = res.data;
+					}
+				});
+				helper.request(helper.websiteUrl + "v1/deleteunit", {
+					'uid': uid,
+					'UNIT_ID': this.deleteunit.UNIT_ID
+				}, 'GET', false, (data) => {
+					helper.showToast(data)
+					this.secondunit.splice(this.deleteunitindex, 1)
+					this.showChildel = false;
+				})
+
+			},
+			// 字段配置部分end
+
+		}
+	}
+</script>
+
+<style lang="less" scoped>
+	/deep/.u-content {
+		border-radius: 10rpx 0 0 10rpx !important;
+	}
+
+	/deep/.u-subsection {
+		padding: 0 10rpx !important;
+		border-radius: 0 !important;
+	}
+
+	.setting {
+		z-index: 999;
+		.u-th {
+			background-color: #6ecac3;
+			color: #FFFFFF;
+			padding: 10rpx 0 !important;
+		}
+
+		.subpart {
+			padding: 0 30rpx;
+
+			.subtop {
+				display: flex;
+				justify-content: space-between;
+				margin: 30rpx 0;
+
+				.subsearch {
+					width: 100%;
+					flex: 1;
+				}
+
+				.subnew {
+					margin-left: 30rpx;
+
+					.new {
+						background-color: #4abdb4;
+						color: #FFFFFF;
+						height: 68rpx;
+						line-height: 68rpx;
+						border-radius: 10rpx;
+						width: 120rpx;
+						text-align: center;
+						font-size: 28rpx;
+					}
+				}
+			}
+		}
+
+		.table-part {
+
+
+			.action-part {
+				display: flex;
+				justify-content: space-around;
+
+				.see,
+				.edit {
+					color: #2979ff;
+				}
+
+				.del {
+					color: #fa3534;
+				}
+
+				.code {
+					color: #ff9900;
+				}
+			}
+		}
+
+		//字段配置页面
+		.collapsePart {
+			margin-bottom: 60rpx;
+
+			.u-collapse-head {
+				position: relative;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				color: #333333;
+				font-size: 28rpx;
+				line-height: 1;
+				padding: 20rpx 6rpx;
+				text-align: left;
+				background-color: #e6f9f7;
+				border-bottom: 2rpx solid #FFFFFF;
+
+				.action {
+					display: flex;
+					justify-content: space-between;
+					width: 300rpx;
+					margin-left: 20rpx;
+
+					.right {
+						font-size: 26rpx;
+						color: #2979ff;
+						margin: 4rpx;
+					}
+
+					.red {
+						color: #fa3534;
+					}
+				}
+			}
+
+			.u-collapse-title {
+				flex: 1;
+				width: 100%;
+				line-height: 60rpx;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				display: -webkit-box;
+				-webkit-line-clamp: 2;
+				-webkit-box-orient: vertical;
+			}
+
+			.u-arrow-down-icon {
+				transition: all 0.3s;
+				margin-right: 20rpx;
+				margin-left: 14rpx;
+
+			}
+
+			.u-arrow-down-icon-active {
+				transform: rotate(180deg);
+				transform-origin: center center;
+
+			}
+
+			.u-collapse-body {
+				overflow: hidden;
+				transition: all 0.3s;
+				background: #FFFFFF;
+			}
+
+			.u-collapse-content {
+				overflow: hidden;
+				font-size: 26rpx;
+				color: #666;
+				text-align: left;
+				padding: 6rpx;
+
+				.childPart {
+					border-bottom: 2rpx solid #f6f6f6;
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+					padding: 10rpx 0;
+
+					.left {
+						flex: 1;
+						width: 100%;
+						line-height: 50rpx;
+						overflow: hidden;
+						text-overflow: ellipsis;
+						display: -webkit-box;
+						-webkit-line-clamp: 2;
+						-webkit-box-orient: vertical;
+						padding-left: 60rpx;
+					}
+
+					.action {
+						display: flex;
+						justify-content: space-between;
+						width: 140rpx;
+						margin-left: 20rpx;
+
+						.right {
+							font-size: 24rpx;
+							color: #2979ff;
+							margin: 4rpx;
+						}
+
+						.red {
+							color: #fa3534;
+						}
+					}
+				}
+			}
+
+		}
+
+	}
+
+	//新增或编辑角色弹框
+	.roleModel {
+		width: 100%;
+		position: relative;
+		padding-top: 90rpx;
+		padding-bottom: 120rpx;
+
+
+		.roleTop {
+			height: 90rpx;
+			line-height: 90rpx;
+			background: #4abdb4;
+			color: #FFFFFF;
+			font-size: 34rpx;
+			text-align: center;
+			position: fixed;
+			top: 0rpx;
+			width: 100%;
+			z-index: 999;
+		}
+
+		.right {
+			position: fixed;
+			top: 0rpx;
+			right: 0;
+			width: 150rpx;
+			height: 90rpx;
+			color: #FFFFFF;
+			line-height: 90rpx;
+			font-size: 30rpx;
+			z-index: 999;
+		}
+
+		.left {
+			position: fixed;
+			top: 0rpx;
+			left: 0;
+			width: 150rpx;
+			height: 90rpx;
+			color: #FFFFFF;
+			line-height: 90rpx;
+			font-size: 30rpx;
+			text-align: right;
+			z-index: 999;
+		}
+
+		.part {
+			margin: 20rpx;
+			border-radius: 20rpx;
+			border: 2rpx solid #f6f6f6;
+
+		}
+
+
+		.rolePart {
+			padding: 0 30rpx;
+			display: flex;
+			line-height: 100rpx;
+			justify-content: flex-start;
+			align-items: center;
+			margin: 30rpx;
+
+			.name {
+				font-size: 30rpx;
+				margin-right: 20rpx;
+				color: #333333;
+				width: 160rpx;
+				text-align: right;
+
+				text {
+					color: #fa3534;
+					margin-right: 10rpx;
+				}
+			}
+
+			.content {
+				flex: 1;
+
+				.selectType {
+					border: 2rpx solid #dcdfe6;
+					height: 70rpx;
+					line-height: 70rpx;
+					color: #303133;
+					width: 100%;
+					font-size: 30rpx;
+
+				}
+
+				.title {
+					color: #2979ff;
+					font-size: 32rpx;
+				}
+
+				.limit {
+					height: 74rpx;
+					line-height: 74rpx;
+
+					.gray {
+						background: #f6f6f6;
+					}
+				}
+			}
+
+		}
+
+		.roletablePart {
+			padding: 60rpx;
+
+			.roleTable {
+				.person {
+					padding: 10rpx;
+				}
+			}
+
+
+		}
+
+		.column {
+			display: block;
+
+			.content {
+
+				background: #f6fff9;
+				border-radius: 20rpx;
+				padding: 0 60rpx 30rpx 60rpx;
+			}
+
+		}
+
+		.addcount {
+			display: flex;
+			align-items: center;
+			width: 300rpx;
+			margin: 0 auto;
+
+			.personicon {
+				margin: 0 50rpx;
+			}
+		}
+
+		.roleAction {
+			position: fixed;
+			bottom: 0;
+			height: 100rpx;
+			line-height: 100rpx;
+			display: flex;
+			justify-content: space-around;
+			align-items: center;
+			font-size: 32rpx;
+			width: 100%;
+			border-top: 2rpx solid #f6f6f6;
+			background: #FFFFFF;
+			z-index: 999;
+
+			.cancel {
+				width: 40%;
+				border: 2rpx solid #dedede;
+				color: #606266;
+				text-align: center;
+				height: 80rpx;
+				line-height: 80rpx;
+				border-radius: 80rpx;
+			}
+
+			.sure {
+				width: 40%;
+				color: #FFFFFF;
+				background: #4abdb4;
+				text-align: center;
+				height: 80rpx;
+				line-height: 80rpx;
+				border: 2rpx solid #4abdb4;
+				border-radius: 80rpx;
+			}
+		}
+	}
+</style>

@@ -1,0 +1,9 @@
+.range.data-v-68bcaf90 {
+  padding: 30rpx;
+  background: #FFFFFF;
+  min-height: 100vh;
+}
+.part.data-v-68bcaf90 {
+  margin-left: 50rpx;
+}
+

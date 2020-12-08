@@ -1,0 +1,26 @@
+.applist.data-v-897ad5b4 {
+  padding: 30rpx 60rpx;
+  width: 100rpx;
+}
+.applist .imgPart.data-v-897ad5b4 {
+  width: 100rpx;
+  height: 100rpx;
+  -webkit-border-radius: 50rpx;
+          border-radius: 50rpx;
+  background: #00b2a4;
+  text-align: center;
+  -webkit-box-shadow: 0 0 10rpx #FFFFFF;
+          box-shadow: 0 0 10rpx #FFFFFF;
+}
+.applist .imgPart image.data-v-897ad5b4 {
+  width: 60rpx;
+  height: 60rpx;
+  margin-top: 20rpx;
+}
+.applist .title.data-v-897ad5b4 {
+  color: #333333;
+  font-size: 28rpx;
+  margin-top: 10rpx;
+  text-align: center;
+}
+

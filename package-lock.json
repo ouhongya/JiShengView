@@ -1,0 +1,11 @@
+{
+  "requires": true,
+  "lockfileVersion": 1,
+  "dependencies": {
+    "uview-ui": {
+      "version": "1.7.7",
+      "resolved": "https://registry.npm.taobao.org/uview-ui/download/uview-ui-1.7.7.tgz",
+      "integrity": "sha1-TbQdaGbNqgDnczJSiArWEWiEieU="
+    }
+  }
+}

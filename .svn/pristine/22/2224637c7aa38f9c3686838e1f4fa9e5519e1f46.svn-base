@@ -1,0 +1,267 @@
+<template>
+	<view class="index">
+		<a-head bgColor='#4abdb4' text="验收评价" :showList='true' :showBack="false" :msg="msg"></a-head>
+		<u-sticky offset-top="0">
+			<view class="lead" :id="leadId">
+				<view class="lead-part">
+					<u-grid :col="leadcount">
+						<u-grid-item v-for="(menu,index) in menuList" :bg-color="index=== current1?'#ccebe9':''" @click="change(menu.menu_URL,index)">
+							<u-badge :count="menu.msg" :offset="[20, 20]" v-if='menu.msg'></u-badge>
+							<image :src="addBaseUrl(menu.menu_ICON)" mode=""></image>
+							<!-- <image :src="menu.menu_ICON" mode=""></image> -->
+							<view class="grid-text">{{menu.menu_NAME}}</view>
+						</u-grid-item>
+					</u-grid>
+				</view>
+				<!-- <view class="oval"></view> -->
+			</view>
+		</u-sticky>
+		<view class="content" v-if="current=='/pages/index/index'">
+			<!-- 这里是图表统计 -->
+			<statistics :offset='leadheight'></statistics>
+
+		</view>
+		<view class="content" v-if="current=='/pages/question/question'">
+			<!-- 这里是问题列表 -->
+			<question :offset='leadheight'></question>
+
+		</view>
+		<view class="content" v-if="current=='/pages/standard/standard'">
+			<!-- 这里是标准模板 -->
+			<standard :offset='leadheight'></standard>
+
+		</view>
+		<view class="content" v-if="current=='/pages/schedule/schedule'">
+			<!-- 这里是待办事项 -->
+			<schedule :offset='leadheight'></schedule>
+
+		</view>
+		<view class="content" v-if="current=='/pages/application/application'">
+			<!-- 这里是应用中心 -->
+			<application :offset='leadheight'></application>
+
+		</view>
+		<view class="content" v-if="current=='/pages/setting/setting'">
+			<!-- 这里是系统配置-->
+			<setting :offset='leadheight'></setting>
+		</view>
+		<view class="content" v-if="current=='/pages/checktask/checktask'">
+			<!-- 这里是检查任务-->
+			<checktask :offset='leadheight'></checktask>
+		</view>
+	</view>
+
+</template>
+
+
+<script>
+	import helper from '@/common/helper.js'
+	import statistics from '@/components/statistics/statistics.vue';
+	import application from '@/components/application/application.vue';
+	import question from '@/components/question/question.vue';
+	import schedule from '@/components/schedule/schedule.vue';
+	import standard from '@/components/standard/standard.vue';
+	import setting from '@/components/setting/setting.vue';
+	import checktask from '@/components/checktask/checktask.vue'
+	export default {
+		components: {
+			'statistics': statistics, //统计
+			'application': application, //应用中心
+			'question': question, //问题列表
+			'schedule': schedule, //待办事项
+			'standard': standard, //标准模板
+			'setting': setting, //系统配置
+			'checktask': checktask, //检查任务
+		},
+		data() {
+			return {
+				leadId: this.$u.guid(),
+				leadheight: 100,
+				current: '/pages/index/index', //当前选中模块
+				current1: 0,
+				leadcount: '1',
+				menuList: [],
+				msg: '0',
+				menuKey: 1
+			}
+		},
+		onLoad() {
+			//初始导航菜单赋值
+			this.init();
+		},
+		onShow() {
+			// this.queryUserByBulletin();
+		},
+		mounted() {
+			this.getleadHeight();
+		},
+		methods: {
+			queryUserByBulletin() {
+				let uid = uni.getStorageSync("USER_ID");
+				let param = {
+					uid: uid
+				}
+				helper.request(helper.websiteUrl + 'v1/queryUserByBulletinNum', param, 'POST', true, res => {
+					this.msg = res;
+					this.$forceUpdate();
+				})
+				// this.msg='4';
+				// this.$forceUpdate();
+			},
+			init() {
+				if (uni.getStorageSync('menuList')) {
+
+					this.menuList = JSON.parse(uni.getStorageSync('menuList'))
+					this.current = this.menuList[0].menu_URL;
+					if (this.menuList.length > 3) {
+						this.leadcount = Math.ceil(this.menuList.length / 2)
+					} else {
+						this.leadcount = this.menuList.length
+					}
+				} else {
+					this.menuList = [{
+							menu_ICON: require('@/static/table.png'),
+							menu_NAME: '图表统计',
+							msg: '0',
+							menu_URL: '/pages/index/index'
+						},
+						{
+							menu_ICON: require('@/static/question3.png'),
+							menu_NAME: '问题列表',
+							msg: '1',
+							menu_URL: '/pages/question/question'
+						},
+						{
+							menu_ICON: require('@/static/schedule1.png'),
+							menu_NAME: '待办事项',
+							msg: '2',
+							menu_URL: '/pages/schedule/schedule'
+						},
+						{
+							menu_ICON: require('@/static/standard7.png'),
+							menu_NAME: '标准模板',
+							msg: '0',
+							menu_URL: '/pages/standard/standard'
+						},
+						{
+							menu_ICON: require('@/static/app5.png'),
+							menu_NAME: '应用中心',
+							msg: '0',
+							menu_URL: '/pages/application/application'
+						},
+						{
+							menu_ICON: require('@/static/setting2.png'),
+							menu_NAME: '系统配置',
+							msg: '0',
+							menu_URL: '/pages/setting/setting'
+						},
+						{
+							menu_ICON: require('@/static/mission1.png'),
+							menu_NAME: '检查任务',
+							msg: '0',
+							menu_URL: '/pages/checktask/checktask'
+						},
+					]
+					if (this.menuList.length > 3) {
+						this.leadcount = Math.ceil(this.menuList.length / 2)
+					} else {
+						this.leadcount = this.menuList.length
+					}
+				}
+			},
+			//获取collapse内容高度
+			getleadHeight() {
+				const {
+					windowWidth,
+					windowHeight
+				} = uni.getSystemInfoSync();
+				// let unit=windowWidth/windowHeight;//长宽比
+				this.$nextTick(() => {
+					this.$uGetRect('#' + this.leadId).then(res => {
+						if (windowWidth >= 750) {
+							this.leadheight = res.height * 2;
+						} else {
+							this.leadheight = 750 * res.height / windowWidth;
+						}
+
+					})
+				});
+			},
+			//当前选中模块
+			change(url, index) {
+				this.current1 = index;
+				this.current = url;
+			},
+			//图片路径函数
+			addBaseUrl(PHOTO_PATH) {
+				return helper.addBaseUrl(PHOTO_PATH);
+			},
+		}
+	}
+</script>
+
+<style lang="less" scoped>
+	/deep/.u-border-top {
+		border-top: 1px solid #f6f6f6;
+	}
+	
+	/deep/.u-border-left{
+		border-left: 1px solid #f6f6f6
+	}
+	
+	/deep/.u-border-right {
+		border-right: 1px solid #f6f6f6
+	}
+	
+	/deep/.u-border-bottom {
+		border-bottom: 1px solid #f6f6f6
+	}
+	/deep/.u-grid{
+		background: #FFFFFF;
+	}
+	
+	
+	.lead {
+		width: 100%;
+		background: #4abdb4;
+		padding: 30rpx 0;
+
+		.lead-part {
+			width: 90%;
+			margin: 0 auto;
+			background: #ccebe9;
+			position: relative;
+			border-radius: 20rpx;
+			padding: 10rpx;
+			box-shadow: 10rpx 10rpx 6rpx rgba(0,0,0,0.4);
+		}
+
+		.badge-icon {
+			position: absolute;
+			top: 14rpx;
+			right: 40rpx;
+		}
+
+		image {
+			width: 60rpx;
+			height: 60rpx;
+		}
+
+		.grid-text {
+			font-size: 28rpx;
+			margin-top: 10rpx;
+			color: #333333;
+		}
+
+	}
+
+	.oval {
+		background: #c8ebe8;
+		border-radius: 96%;
+		width: 90%;
+		margin: 0 auto;
+		height: 80rpx;
+		margin-top: -44rpx;
+
+	}
+</style>
